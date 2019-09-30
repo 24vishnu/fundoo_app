@@ -1,0 +1,22 @@
+{% extends 'login_pages/base.html' %}
+
+{% block content %}
+<center>
+  <h2> This is login page </h2>
+  <form action="{% url 'login_app:sign_in' %}" method="post">
+    {% csrf_token %}
+    <br>
+        Enter username <input type="text" name="username"><br>
+    <br>
+        Enter Password <input type="password" name="password"><br>
+    <br>
+    <button type="submit">Login</button>
+    <p>Forgot Password Reset password</a></p>
+  </form>
+  <p>Don't have an account? <a href="{% url 'login_app:sign_up' %}">Sign up!</a></p>
+    <div align="center" style="color:red">{% for message in messages %}
+        {{message}}
+     {% endfor %}
+    </div>
+  </center>
+{% endblock content %}

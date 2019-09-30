@@ -1,0 +1,25 @@
+{% extends 'login_pages/base.html' %}
+
+{% block content %}
+
+  <form action="{% url 'login_app:sign_in' %}" method="post">
+    {% csrf_token %}
+    <table align="center">
+      <tr>
+        <td>Enter username</td> <td><input type="text" name="username"> </td><br>
+      </tr>
+      <tr>
+        <td>Enter Email</td> <td><input type="text" name="username"> </td><br>
+      </tr>
+      <tr>
+        <td>Enter Password</td> <td><input type="password" name="password"> </td><br>
+      </tr>
+      <tr>
+         <td> <button type="submit">SIGN UP</button> </td><br>
+      </tr>
+    </table>
+
+
+    <p>Forgot Password Reset password</a></p>
+  </form>
+{% endblock content %}
