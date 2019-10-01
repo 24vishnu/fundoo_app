@@ -1,5 +1,9 @@
 """
-This is serializer.py class for user authentication model classes
+serializer.py
+    This is serializer.py class for user authentication model classes
+
+author : vishnu kumar
+date : 30/09/2019
 """
 from rest_framework import serializers
 from .models import Registration, UserLogin, PasswordReset, ForgotPassword

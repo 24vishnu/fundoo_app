@@ -1,4 +1,11 @@
-"""In views.py file we implement the all required view api,s """
+"""
+views.py
+    In views.py file we implement the all required view api,s
+
+author : vishnu kumar
+date : 28/09/2019
+"""
+
 import json
 
 import jwt
@@ -6,18 +13,21 @@ from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMessage
 from django.core.validators import validate_email
 from django.http import HttpResponse
-from django.shortcuts import render
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from .serializer import RegistrationSerializer, LoginSerializer, PasswordResetSerialize, ForgotPasswordSerializer
+from . import short_url
+from .event_emitter import *
+from .serializer import (
+    RegistrationSerializer,
+    LoginSerializer,
+    PasswordResetSerialize,
+    ForgotPasswordSerializer
+)
 
 
-# pylint: disable=line-too-long
-# pylint: disable= no-self-use
 class UserRegistration(GenericAPIView):
     """
     Following class is implement for register a new user and send a verification link
@@ -27,13 +37,6 @@ class UserRegistration(GenericAPIView):
     # we need to include serialize class
     serializer_class = RegistrationSerializer
 
-    def get(self, request):
-        """
-        :param request:
-        :return:
-        """
-        return render(request, 'login_pages/registration.html')
-
     def post(self, request):
         """
         :param request: user request for send information for register the user
@@ -41,70 +44,46 @@ class UserRegistration(GenericAPIView):
         :return: we send a activation link on user given mail if user input is valid
         """
 
+        # response is a dictionary SMD format default success is False
+        response = {
+            "success": False,
+            "message": "something went wrong",
+            "data": []
+        }
+
         username = request.data['username']
         email = request.data['email']
         password = request.data['password']
-
-        try:
-            # check given email is valid or not
-            validate_email(email)
-        except Exception:
-            return HttpResponse(json.dumps("not a vaild email"))
 
         # check user enter any empty field or not if any field is empty then give error
         if username == "" or email == "" or password == "":
             return HttpResponse(json.dumps("Error :field should not be empty."))
 
         try:
+            # check given email is valid or not
+            validate_email(email)
+
             # if all user input data is correct then create user profile with given name, email and password and
             # then save in database
-
             user = User.objects.create_user(username=username, email=email, password=password)  # , is_active=False)
             user.save()
 
             # Get current site
             current_site = get_current_site(request)
-            mail_subject = 'Activate your account.'
 
             # create jwt token this token is in byte form therefor we decode and convert into string format
             jwt_token = jwt.encode({user.username: user.email}, 'private_key', algorithm='HS256').decode("utf-8")
+            mail_url = 'http://' + str(current_site.domain) + '/login/activate/' + jwt_token + '/'
+            message_short_url = short_url.sort_url_method(mail_url)
+            ee.emit('messageEvent', email, message_short_url)
+            response['success'] = True
+            response['message'] = "You are successfully registered ,Only you need to verify your Email"
+            return HttpResponse(response.values()[1], status=201)
 
-            email = EmailMessage(
-                mail_subject,
-                'http://' + str(current_site.domain) + '/login/activate/' + jwt_token + '/',
-                to=[email]
-            )
-            # send message(activation link) on user given mail address
-            email.send()
-
-            return HttpResponse("Your profile successfully created now please activate your account")
-
-        except (TypeError, ValueError, OverflowError, Exception):
-            return HttpResponse(json.dumps("Database Error."))
-
-    # def activate(self, request, token):
-    #     decoded_token = jwt.decode(token, 'private_key', algorithms='HS256')
-    #
-    #     # check given token information is store in database or not
-    #     try:
-    #         user = User.objects.get(username=list(decoded_token.keys())[0])
-    #     except(TypeError, ValueError, OverflowError, User.DoesNotExist):
-    #         # if this is not store in our database then user should have first signup because user in invalid
-    #         return HttpResponse('you are not registered yet, please sign up first')
-    #         # user = None
-    #     if user is not None and not user.is_active:
-    #         # if user valid then activate user account and save
-    #         user.is_active = True
-    #         user.save()
-    #         # login(request, user)
-    #         return render(request, 'login_pages/confirm_mail.html')
-    #     else:
-    #         # this link already activated or (this link was one time use )
-    #         return render(request, template_name='login_pages/home.html')
+        except Exception as e:
+            return HttpResponse(json.dumps(str(e)))
 
 
-# pylint: disable=line-too-long
-# pylint: disable= no-self-use
 class UserLogin(GenericAPIView):
     """
     login method use for login any user,
@@ -113,13 +92,6 @@ class UserLogin(GenericAPIView):
 
     # we need to include serialize class
     serializer_class = LoginSerializer
-
-    def get(self, request):
-        """
-        :param request:
-        :return:
-        """
-        return render(request, 'login_pages/login_page.html')
 
     def post(self, request):
         """
@@ -130,7 +102,6 @@ class UserLogin(GenericAPIView):
         password = request.data['password']
 
         if username == "" or password == "":
-            messages.info(request, "Username/password should not be empty")
             return HttpResponse(json.dumps("Username/password should not be empty"))
         try:
             user = User.objects.get(username=username)
@@ -138,12 +109,13 @@ class UserLogin(GenericAPIView):
             # authenticate username and password valid or not
             if authenticate(username=username, password=password) is not None:
                 jwt_token = jwt.encode({user.username: user.email}, 'private_key', algorithm='HS256').decode("utf-8")
-                messages.info(request, jwt_token)
-                return HttpResponse(content='you are successfully login' + '\n Token :' + jwt_token)
+                mail_url = 'http://' + str(get_current_site(request).domain) + '/login/' + jwt_token + '/'
+                message_short_url = short_url.sort_url_method(mail_url)
+                return HttpResponse(content='you are successfully login' + '\n short url :' + message_short_url)
 
-        except (TypeError, ValueError, OverflowError, Exception):
-            messages.info(request, "Incorrect Username/password")
-        return HttpResponse(json.dumps('Incorrect Username/password'))
+        except Exception as e:
+            return HttpResponse(json.dumps(str(e)))
+        return None
 
 
 # pylint: disable= line-too-long
@@ -159,12 +131,6 @@ class ForgotPassword(GenericAPIView):
     # give the permission allow any type
     permission_classes = (AllowAny,)
 
-    def get(self):
-        """
-        :return: this project get request not allowed
-        """
-        return HttpResponse(json.dumps("Get request not allowed"))
-
     def post(self, request):
         """
         :param request: take user email address for sending reset password link
@@ -175,24 +141,24 @@ class ForgotPassword(GenericAPIView):
             validate_email(email)
             if email == "":
                 messages.info(request, "field should not be empty.")
-                raise Exception
-            user = User.objects.get(email=email)
+                raise Exception("field should not be empty.")
 
+            user = User.objects.get(email=email)
             current_site = get_current_site(request)
             mail_subject = 'Reset your Password account.'
             jwt_token = jwt.encode({user.username: user.email}, 'private_key', algorithm='HS256').decode("utf-8")
             to_email = user.email
-
+            mail_url = 'http://' + str(current_site.domain) + '/ResetPassword/' + jwt_token + '/'
+            message_short_url = short_url.sort_url_method(mail_url)
             email = EmailMessage(
                 mail_subject,
-                'http://' + str(current_site.domain) + '/ResetPassword/' + jwt_token + '/',
+                message_short_url,
                 to=[to_email]
             )
             email.send()
-            return HttpResponse(content='http://' + str(current_site.domain) + '/ResetPassword/' + str(jwt_token))
-        except Exception:
-            # return render(request, 'login_pages/forgot_password.html')
-            return HttpResponse(json.dumps("Email does not exist in database"))
+            return HttpResponse(content=str(message_short_url))
+        except Exception as e:
+            return HttpResponse(json.dumps(str(e)))
 
 
 # pylint: disable=line-too-long
@@ -201,14 +167,9 @@ class ResetPassword(GenericAPIView):
     """
     Reset password class is used for user password change password
     """
+
     # include the serializer class of reset password serializer
     serializer_class = PasswordResetSerialize
-
-    def get(self):
-        """
-        :return:
-        """
-        return HttpResponse("Get request not allowed")
 
     def post(self, request):
         """
@@ -224,24 +185,19 @@ class ResetPassword(GenericAPIView):
         try:
             if password1 == "" or password2 == "":
                 return HttpResponse(json.dumps('password should not be empty!'))
-
-            if password1 != password2:
+            elif password1 != password2:
                 return HttpResponse(json.dumps('Your password does not match!'))
 
             user = User.objects.get(username=username)
+            user.set_password(password1)
+            user.save()
+            messages.info(request, "password reset done")
+            return HttpResponse('password Reset Done')
 
-            if user is not None or user is not "AnonymousUser":
-                user.set_password(password1)
-                user.save()
-                messages.info(request, "password reset done")
-                return HttpResponse('password Reset Done')
-
-        except (ValueError, Exception):
-            return HttpResponse(json.dumps("Incorrect Username"))
+        except Exception as e:
+            return HttpResponse(json.dumps(str(e)))
 
 
-# pylint: disable=line-too-long
-# pylint: disable= no-self-use
 class UserProfile(GenericAPIView):
     """
     user profile class is used this will display if user is authenticated
@@ -251,16 +207,8 @@ class UserProfile(GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
+    def post(self):
         """
-        :param request:
-        :return:
-        """
-        return HttpResponse("Get request not allowed")
-
-    def post(self, request):
-        """
-        :param request:
         :return:
         """
         return HttpResponse("You/I are/am authenticated user")
