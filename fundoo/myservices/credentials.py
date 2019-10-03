@@ -1,0 +1,13 @@
+AWS_UPLOAD_BUCKET = "s3-fundoo-bucket"
+
+AWS_UPLOAD_USERNAME = "s3-fundoo-user"
+
+AWS_UPLOAD_GROUP = "s3-fundoo-group"
+
+AWS_UPLOAD_REGION = 'us-east-2'
+
+AWS_UPLOAD_ACCESS_KEY_ID = "AKIAQHBF74ELBACD7SUS"
+
+AWS_UPLOAD_SECRET_KEY = "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"
+
+

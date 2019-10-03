@@ -32,11 +32,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'storages',
     'rest_framework_swagger',
     'rest_framework',
+    'corsheaders',
+
+    'fundoo_note',
     'login_app',
     'fundoo',
-'corsheaders',
+
 ]
 
 MIDDLEWARE = [
@@ -48,7 +53,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 
 ]
@@ -58,7 +63,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
