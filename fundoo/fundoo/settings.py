@@ -2,14 +2,14 @@ import os
 
 from dotenv import load_dotenv, find_dotenv
 from pathlib import *
+
 load_dotenv(find_dotenv())
-env_path = Path('.')/'.env'
+env_path = Path('.') / '.env'
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -21,7 +21,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -35,6 +34,7 @@ INSTALLED_APPS = [
 
     'storages',
     'rest_framework_swagger',
+    'rest_framework.authtoken',
     'rest_framework',
     'corsheaders',
 
@@ -93,7 +93,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
@@ -112,7 +111,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
@@ -126,7 +124,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
@@ -139,16 +136,14 @@ REST_FRAMEWORK = {
 
     )
     ,
-'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
 }
-
 
 EMAIL_USE_TLS = True
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_PORT = 587
-
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
@@ -159,7 +154,6 @@ SWAGGER_SETTINGS = {
         }
     },
 }
-
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=400),
@@ -186,3 +180,15 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+# S3 variables name
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+SHORT_API_KEY = os.getenv("SHORT_API_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_UPLOAD_BUCKET")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_UPLOAD_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_UPLOAD_SECRET_KEY")
+AWS_DEFAULT_ACL = None
+AWS_S3_FILE_OVERWRITE = False

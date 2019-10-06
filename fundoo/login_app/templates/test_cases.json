@@ -1,0 +1,56 @@
+[
+    {
+      "test_user1": {
+        "username": "admin",
+        "password": "admdren"},
+        "test_user2": {
+            "username": "dsvdv",
+            "password": "dvd"},
+        "test_user3": {
+            "username": "",
+            "password": ""},
+        "test_user4": {
+            "username": "ad@@@@min",
+            "password": ""}
+    },
+    {
+      "test_user1": {
+        "username": "admin",
+        "email": "vishnu23kumar@gmail.com",
+        "password": "admin"},
+        "test_user2": {
+            "username": "temp_user",
+            "email": "temp_email_gmail.com",
+            "password": "temp_password"},
+        "test_user3": {
+            "username": "",
+            "email": "@",
+            "password": ""},
+        "test_user4": {
+            "username": "new_user",
+            "email": "new_emil@",
+            "password": ""}
+    },
+  {
+    "test1": {
+      "username": "admin",
+      "password1": "admin",
+      "password2": "admin"
+    },
+    "test2": {
+      "username": "test_user1",
+      "password1": "",
+      "password2": "admin1"
+    },
+    "test3": {
+      "username": "test_user2",
+      "password1": "",
+      "password2": ""
+    },
+    "test4": {
+      "username": "",
+      "password1": "",
+      "password2": ""
+    }
+  }
+]

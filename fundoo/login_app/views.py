@@ -104,15 +104,14 @@ class UserLogin(GenericAPIView):
         if username == "" or password == "":
             return HttpResponse(json.dumps("Username/password should not be empty"))
         try:
-            user = User.objects.get(username=username)
-
             # authenticate username and password valid or not
             if authenticate(username=username, password=password) is not None:
-                jwt_token = jwt.encode({user.username: user.email}, 'private_key', algorithm='HS256').decode("utf-8")
+                jwt_token = jwt.encode({username: password}, 'private_key', algorithm='HS256').decode("utf-8")
                 mail_url = 'http://' + str(get_current_site(request).domain) + '/login/' + jwt_token + '/'
                 message_short_url = short_url.sort_url_method(mail_url)
                 return HttpResponse(content='you are successfully login' + '\n short url :' + message_short_url)
-
+            else:
+                raise Exception("Incorrect Username or Password")
         except Exception as e:
             return HttpResponse(json.dumps(str(e)))
         return None

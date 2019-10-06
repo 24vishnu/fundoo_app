@@ -21,7 +21,10 @@ class Registration(models.Model):
         raise forms.ValidationError(" one of the above field is empty")
 
     def __str__(self):
-        return "This is Registration class model of {} user".format(self.username)
+        return self.email + 'is email of' + self.username
+
+    def __repr__(self):
+        return self.username + ' is added.'
 
     class Meta:
         """
