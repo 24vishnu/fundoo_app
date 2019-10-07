@@ -17,8 +17,13 @@ from django.core.validators import validate_email
 from django.http import HttpResponse
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from myservices import redis # short_url, login_decorator, event_emitter
+import fundoo
 
 from . import short_url
+# from .redis import redis_db
+from .decorators import login_decorator
 from .event_emitter import *
 from .serializer import (
     RegistrationSerializer,
@@ -78,7 +83,7 @@ class UserRegistration(GenericAPIView):
             ee.emit('messageEvent', email, message_short_url)
             response['success'] = True
             response['message'] = "You are successfully registered ,Only you need to verify your Email"
-            return HttpResponse(response.values()[1], status=201)
+            return HttpResponse(json.dumps(response), status=201)
 
         except Exception as e:
             return HttpResponse(json.dumps(str(e)))
@@ -101,20 +106,33 @@ class UserLogin(GenericAPIView):
         username = request.data['username']
         password = request.data['password']
 
+        response = {
+            "success": False,
+            "message": "something went wrong",
+            "data": []
+        }
+
         if username == "" or password == "":
             return HttpResponse(json.dumps("Username/password should not be empty"))
         try:
             # authenticate username and password valid or not
             if authenticate(username=username, password=password) is not None:
-                jwt_token = jwt.encode({username: password}, 'private_key', algorithm='HS256').decode("utf-8")
-                mail_url = 'http://' + str(get_current_site(request).domain) + '/login/' + jwt_token + '/'
-                message_short_url = short_url.sort_url_method(mail_url)
-                return HttpResponse(content='you are successfully login' + '\n short url :' + message_short_url)
+                jwt_token = jwt.encode({"username": username, "password": password}, fundoo.settings.SECRET_KEY,
+                                       algorithm='HS256').decode("utf-8")
+                # mail_url = 'http://' + str(get_current_site(request).domain) + '/login/' + jwt_token + '/'
+                # message_short_url = short_url.sort_url_method(mail_url)
+                # set token in redis cache
+                # redis_obj = RedisConnection()
+                redis.redis_db.set(username, jwt_token)
+                response['success'] = True
+                response['message'] = "You are successfully login"
+                response['data'] = {'Authorization': jwt_token}
+                print(redis.redis_db.get(username))
+                return HttpResponse(json.dumps(response))
             else:
                 raise Exception("Incorrect Username or Password")
         except Exception as e:
             return HttpResponse(json.dumps(str(e)))
-        return None
 
 
 # pylint: disable= line-too-long
@@ -204,10 +222,11 @@ class UserProfile(GenericAPIView):
 
     # include the serialize class and permission class (IsAuthenticated)
     serializer_class = LoginSerializer
-    permission_classes = (IsAuthenticated,)
 
-    def post(self):
+    @staticmethod
+    @login_decorator
+    def get(request):
         """
         :return:
         """
-        return HttpResponse("You/I are/am authenticated user")
+        return Response("You/I are/am authenticated user")

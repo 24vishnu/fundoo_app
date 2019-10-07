@@ -42,13 +42,13 @@ class UserLogin(models.Model):
     password = models.CharField(max_length=50)
 
     def __str__(self):
-        return "This is Login class model of {} user".format(self.username)
+        return "username {} password {}".format(self.username, self.password)
 
     class Meta:
         """
         This is meta class for user login
         """
-        verbose_name = 'user authentication'
+        verbose_name = 'Authorization'
         verbose_name_plural = 'password authentication'
 
 

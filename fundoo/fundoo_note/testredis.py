@@ -21,4 +21,4 @@ redis_db.delete('twilio')
 # output is "1" because the command was successful
 redis_db.get('twilio')
 # nothing is returned because the key and value no longer exist
-print("ye kya h :   ", redis_db.get('twilio'))
+print("ye kya h :   ", redis_db.get('full stack'))
