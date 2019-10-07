@@ -15,15 +15,14 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.validators import validate_email
 from django.http import HttpResponse
+from django_short_url.models import ShortURL
+from django_short_url.views import get_surl
+from myservices import redis
+from myservices.decorators import login_decorator
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.response import Response
-from myservices import redis # short_url, login_decorator, event_emitter
-import fundoo
+from rest_framework.permissions import AllowAny
 
-from . import short_url
-# from .redis import redis_db
-from .decorators import login_decorator
+import fundoo
 from .event_emitter import *
 from .serializer import (
     RegistrationSerializer,
@@ -63,6 +62,8 @@ class UserRegistration(GenericAPIView):
         # check user enter any empty field or not if any field is empty then give error
         if username == "" or email == "" or password == "":
             return HttpResponse(json.dumps("Error :field should not be empty."))
+        if len(password) < 5:
+            return HttpResponse(json.dumps("Error :password should be at least 5 character's"))
 
         try:
             # check given email is valid or not
@@ -70,23 +71,30 @@ class UserRegistration(GenericAPIView):
 
             # if all user input data is correct then create user profile with given name, email and password and
             # then save in database
-            user = User.objects.create_user(username=username, email=email, password=password)  # , is_active=False)
+            user = User.objects.create_user(username=username, email=email, password=password, is_active=False)
             user.save()
 
             # Get current site
             current_site = get_current_site(request)
 
             # create jwt token this token is in byte form therefor we decode and convert into string format
-            jwt_token = jwt.encode({user.username: user.email}, 'private_key', algorithm='HS256').decode("utf-8")
-            mail_url = 'http://' + str(current_site.domain) + '/login/activate/' + jwt_token + '/'
-            message_short_url = short_url.sort_url_method(mail_url)
-            ee.emit('messageEvent', email, message_short_url)
-            response['success'] = True
-            response['message'] = "You are successfully registered ,Only you need to verify your Email"
-            return HttpResponse(json.dumps(response), status=201)
+            jwt_token = jwt.encode(
+                {user.username: user.email},
+                fundoo.settings.SECRET_KEY,
+                algorithm='HS256'
+            ).decode("utf-8")
+            mail_url = get_surl(jwt_token)
+            short_token = mail_url.split("/")
 
-        except Exception as e:
-            return HttpResponse(json.dumps(str(e)))
+            mail_url = 'http://' + str(current_site.domain) + '/login/activate/' + short_token[2] + '/'
+            # message_short_url = short_url.sort_url_method(mail_url)
+            ee.emit('messageEvent', email, mail_url)
+            response['success'] = True
+            response['message'] = "You are successfully registered " \
+                                  ",Only you need to verify your Email"
+            return HttpResponse(json.dumps(response), status=201)
+        except Exception as exception_detail:
+            return HttpResponse(str(exception_detail))  # response, indent=1))
 
 
 class UserLogin(GenericAPIView):
@@ -107,32 +115,31 @@ class UserLogin(GenericAPIView):
         password = request.data['password']
 
         response = {
-            "success": False,
+            "status": False,
             "message": "something went wrong",
             "data": []
         }
 
         if username == "" or password == "":
-            return HttpResponse(json.dumps("Username/password should not be empty"))
+            response['message'] = 'Username/password should not be empty'
+            return HttpResponse(json.dumps(response, indent=1))
         try:
             # authenticate username and password valid or not
             if authenticate(username=username, password=password) is not None:
-                jwt_token = jwt.encode({"username": username, "password": password}, fundoo.settings.SECRET_KEY,
+                jwt_token = jwt.encode({"username": username, "password": password},
+                                       fundoo.settings.SECRET_KEY,
                                        algorithm='HS256').decode("utf-8")
-                # mail_url = 'http://' + str(get_current_site(request).domain) + '/login/' + jwt_token + '/'
-                # message_short_url = short_url.sort_url_method(mail_url)
                 # set token in redis cache
-                # redis_obj = RedisConnection()
                 redis.redis_db.set(username, jwt_token)
-                response['success'] = True
+                response['status'] = True
                 response['message'] = "You are successfully login"
-                response['data'] = {'Authorization': jwt_token}
+                response['data'] = {'Authorization key ': jwt_token}
                 print(redis.redis_db.get(username))
-                return HttpResponse(json.dumps(response))
+                return HttpResponse(json.dumps(response, indent=1))
             else:
                 raise Exception("Incorrect Username or Password")
-        except Exception as e:
-            return HttpResponse(json.dumps(str(e)))
+        except Exception as exception_detail:
+            return HttpResponse(json.dumps(str(exception_detail)))
 
 
 # pylint: disable= line-too-long
@@ -166,7 +173,7 @@ class ForgotPassword(GenericAPIView):
             jwt_token = jwt.encode({user.username: user.email}, 'private_key', algorithm='HS256').decode("utf-8")
             to_email = user.email
             mail_url = 'http://' + str(current_site.domain) + '/ResetPassword/' + jwt_token + '/'
-            message_short_url = short_url.sort_url_method(mail_url)
+            message_short_url = get_surl(mail_url)  # short_url.sort_url_method(mail_url)
             email = EmailMessage(
                 mail_subject,
                 message_short_url,
@@ -174,8 +181,8 @@ class ForgotPassword(GenericAPIView):
             )
             email.send()
             return HttpResponse(content=str(message_short_url))
-        except Exception as e:
-            return HttpResponse(json.dumps(str(e)))
+        except Exception as exception_detail:
+            return HttpResponse(json.dumps(str(exception_detail)))
 
 
 # pylint: disable=line-too-long
@@ -211,8 +218,8 @@ class ResetPassword(GenericAPIView):
             messages.info(request, "password reset done")
             return HttpResponse('password Reset Done')
 
-        except Exception as e:
-            return HttpResponse(json.dumps(str(e)))
+        except Exception as exception_detail:
+            return HttpResponse(json.dumps(str(exception_detail)))
 
 
 class UserProfile(GenericAPIView):
@@ -229,4 +236,31 @@ class UserProfile(GenericAPIView):
         """
         :return:
         """
-        return Response("You/I are/am authenticated user")
+        response = {"status": True, "message": "You are authenticated user", "data": []}
+        return HttpResponse(json.dumps(response, indent=1))
+
+
+def activate(request, token):
+    response = {
+        'status': False,
+        'message': 'something is wrong',
+        'data': []
+    }
+    try:
+        token = ShortURL.objects.get(surl=token)
+        decoded_token = jwt.decode(token.lurl, fundoo.settings.SECRET_KEY, algorithms='HS256')
+        user = User.objects.get(username=list(decoded_token.keys())[0])
+    except Exception:
+        user = None
+    if user is not None:
+        if not user.is_active:
+            user.is_active = True
+            user.save()
+            response['status'] = True
+            response['message'] = 'Thank you for your email confirmation. Now you can login your account.'
+        elif user.is_active:
+            response['message'] = 'This like already used'
+    else:
+        response['message'] = 'This is not valid link'
+
+    return HttpResponse(json.dumps(response, indent=2))

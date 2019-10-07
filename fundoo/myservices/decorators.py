@@ -11,24 +11,17 @@ def login_decorator(function):
     def wrapper(request):
 
         smd = {
-            "success": False,
+            "status": False,
             "message": "not a vaild user",
             'data': []
         }
 
         try:
             header = request.META["HTTP_AUTHORIZATION"]
-            token_decode = header.split(" ")
-            decode = jwt.decode(token_decode[1], settings.SECRET_KEY)
-            print('ccccccccccccccccc', decode)
-            user = User.objects.get(id=decode['user_id'])
-            print('ddddddddddddddddddd', user)
-            # red_obj = RedisConnection()  # red object is created
-            print('eeeeeeeeeeeeeeeee')
-            redis_db.get(user.username)
-            print('ffffffffffffffffffff')
-            return function(request)
+            decode = jwt.decode(header, settings.SECRET_KEY)
+            user = User.objects.get(username=decode['username'])
+            if redis_db.get(user.username) is not None:
+                return function(request)
         except (Exception, TypeError):
             HttpResponse(json.dumps(smd))
-
     return wrapper

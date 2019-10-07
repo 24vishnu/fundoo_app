@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'fundoo_note',
     'login_app',
     'fundoo',
+    'django_short_url',
 
 ]
 

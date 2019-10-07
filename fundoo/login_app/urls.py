@@ -14,5 +14,6 @@ urlpatterns = [
     path('UserProfile', views.UserProfile.as_view(), name="Profile"),
     path('ForgotPassword/', views.ForgotPassword.as_view(), name='forgot_password'),
     path('ResetPassword/', views.ResetPassword.as_view(), name='reset_password'),
+    path('login/activate/<token>/', views.activate, name='activate'),
     url('auth/', SCHEMA_VIEW),
 ]
