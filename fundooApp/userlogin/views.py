@@ -11,24 +11,30 @@ import json
 import jwt
 from django.contrib import messages
 from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.validators import validate_email
 from django.http import HttpResponse
+from django.shortcuts import render
 from django_short_url.models import ShortURL
 from django_short_url.views import get_surl
 from myservices import redis
 from myservices.decorators import login_decorator
+from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 
 import fundoo
+from rest_framework.response import Response
+
 from .event_emitter import *
 from .serializer import (
     RegistrationSerializer,
     LoginSerializer,
     PasswordResetSerialize,
-    ForgotPasswordSerializer
+    ForgotPasswordSerializer,
+    FileSerializer,
 )
 
 
@@ -215,12 +221,13 @@ class ResetPassword(GenericAPIView):
 
     def post(self, request, token):
         """
+        :param token:
         :param request: take the user input as username, password and confirm password
         :return: if user name is exist then send response password set successfully
                  other wise print error message
         """
-        token = ShortURL.objects.get(surl=token)
-        decoded_token = jwt.decode(token.lurl, fundoo.settings.SECRET_KEY, algorithms='HS256')
+        token1 = ShortURL.objects.get(surl=token)
+        decoded_token = jwt.decode(token1.lurl, fundoo.settings.SECRET_KEY, algorithms='HS256')
         user = User.objects.get(username=list(decoded_token.keys())[0])
 
         password1 = request.data['password1']
@@ -270,6 +277,28 @@ class UserProfile(GenericAPIView):
         return HttpResponse(json.dumps(response, indent=1))
 
 
+class Upload(GenericAPIView):
+    serializer_class = FileSerializer
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        response = {
+            "success": False,
+            "message": "something went wrong",
+            "data": []
+        }
+        file_serialize = FileSerializer(data=request.FILES)
+        if file_serialize.is_valid():
+            file_serialize.save()
+            response['success'] = True
+            response['message'] = 'You file is successfully uploaded'
+            response['data'] = [file_serialize.data['file_details'], status.HTTP_201_CREATED]
+            return Response(json.dumps(response))
+        else:
+            response['message'] = [status.HTTP_400_BAD_REQUEST]
+            return Response(json.dumps(response))
+
+
 def activate(request, token):
     response = {
         'status': False,
@@ -294,3 +323,16 @@ def activate(request, token):
         response['message'] = 'This is not valid link'
 
     return HttpResponse(json.dumps(response, indent=2))
+
+
+def profile_view(request):
+    return render(request, 'index.html')
+
+
+def login(request):
+    return render(request, 'login.html')
+
+
+@login_required
+def home(request):
+    return render(request, 'home.html')

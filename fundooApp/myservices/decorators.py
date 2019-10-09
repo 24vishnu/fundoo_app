@@ -7,10 +7,9 @@ from .redis import redis_db
 
 
 def login_decorator(function):
-
     def wrapper(request):
 
-        smd = {
+        response = {
             "status": False,
             "message": "you are not a valid user",
             'data': []
@@ -23,5 +22,6 @@ def login_decorator(function):
             if redis_db.get(user.username) is not None:
                 return function(request)
         except (Exception, TypeError):
-            return HttpResponse(json.dumps(smd))
+            return HttpResponse(json.dumps(response))
+
     return wrapper

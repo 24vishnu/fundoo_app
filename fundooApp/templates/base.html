@@ -1,18 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>CFE Upload</title>
-  </head>
-  <body>
-    <div class='container main-container'>
-      {% block content %}{% endblock content %}
-    </div>
-    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script> <!-- Ensure it's not jquery-3.2.1.slim.min.js -->
-  </body>
-{% block javascript %}
-
-{% endblock %}
- </html>
+    {% load static %}
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <link rel="stylesheet" href="{% static 'css/index.css' %}" />
+        <title>Social Auth with Django</title>
+    </head>
+    <body>
+    <center>
+        <div class="container-fluid">
+            <div>
+                <h1 class="text-white text-center">{% block title %}{% endblock %}</h1>
+                <div class="card p-5">
+                    {% block content %}
+                    {% endblock %}
+                </div>
+            </div>
+        </div>
+      </center>
+    </body>
+    </html>

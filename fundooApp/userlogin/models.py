@@ -88,3 +88,10 @@ class PasswordReset(models.Model):
         This is meta class for password reset
         """
         verbose_name = 'password_reset'
+
+
+class ImageUpload(models.Model):
+    file_details = models.FileField(blank=False, null=False)
+
+    def __str__(self):
+        return str(self.file_details)
