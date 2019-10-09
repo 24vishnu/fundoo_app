@@ -1,6 +1,6 @@
 """
 tests.py
-TDD functionality for our login_app module
+TDD functionality for our userlogin module
 """
 import json
 import requests

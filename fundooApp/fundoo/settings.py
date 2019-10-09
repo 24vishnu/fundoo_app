@@ -38,8 +38,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    'fundoo_note',
-    'login_app',
+    'fundooNote',
+    'userlogin',
     'fundoo',
     'django_short_url',
 

@@ -74,15 +74,14 @@ class PasswordReset(models.Model):
     """
      password reset model class used for set the new password of user with given user name
     """
-    username = models.CharField(max_length=50)
     password1 = models.CharField(max_length=50)
     password2 = models.CharField(max_length=50)
 
-    if username == "" or password1 == "" or password2 == "":
+    if password1 == "" or password2 == "":
         raise forms.ValidationError(" username/password should not be empty!")
 
     def __str__(self):
-        return "This is PasswordReset class model of {} user".format(self.username)
+        return "new password is {} ".format(self.password1)
 
     class Meta:
         """

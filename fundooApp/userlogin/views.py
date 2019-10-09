@@ -61,13 +61,22 @@ class UserRegistration(GenericAPIView):
 
         # check user enter any empty field or not if any field is empty then give error
         if username == "" or email == "" or password == "":
-            return HttpResponse(json.dumps("Error :field should not be empty."))
-        if len(password) < 5:
-            return HttpResponse(json.dumps("Error :password should be at least 5 character's"))
+            response['message'] = "Error :field should not be empty."
+            return HttpResponse(json.dumps(response, indent=1))
+        elif len(password) < 5:
+            response['message'] = "Error :password should be at least 5 character's"
+            return HttpResponse(json.dumps(response, indent=1))
+        elif User.objects.filter(email=email).exists():
+            response['message'] = "Email already exist. "
+            return HttpResponse(json.dumps(response))
 
         try:
             # check given email is valid or not
-            validate_email(email)
+            try:
+                validate_email(email)
+            except:
+                response['message'] = 'email is not valid'
+                return HttpResponse(json.dumps(response))
 
             # if all user input data is correct then create user profile with given name, email and password and
             # then save in database
@@ -85,14 +94,14 @@ class UserRegistration(GenericAPIView):
             ).decode("utf-8")
             mail_url = get_surl(jwt_token)
             short_token = mail_url.split("/")
-
+            mail_subject = 'Activate your account'
             mail_url = 'http://' + str(current_site.domain) + '/login/activate/' + short_token[2] + '/'
             # message_short_url = short_url.sort_url_method(mail_url)
-            ee.emit('messageEvent', email, mail_url)
+            ee.emit('messageEvent', mail_subject, email, mail_url)
             response['success'] = True
             response['message'] = "You are successfully registered " \
                                   ",Only you need to verify your Email"
-            return HttpResponse(json.dumps(response), status=201)
+            return HttpResponse(json.dumps(response, indent=1), status=201)
         except Exception as exception_detail:
             return HttpResponse(str(exception_detail))  # response, indent=1))
 
@@ -137,6 +146,7 @@ class UserLogin(GenericAPIView):
                 print(redis.redis_db.get(username))
                 return HttpResponse(json.dumps(response, indent=1))
             else:
+                response['message'] = "Incorrect Username or Password"
                 raise Exception("Incorrect Username or Password")
         except Exception as exception_detail:
             return HttpResponse(json.dumps(str(exception_detail)))
@@ -161,6 +171,11 @@ class ForgotPassword(GenericAPIView):
         :return:
         """
         email = request.data['email']
+        response = {
+            'status': False,
+            'message': 'Something is wrong',
+            'data': []
+        }
         try:
             validate_email(email)
             if email == "":
@@ -170,19 +185,22 @@ class ForgotPassword(GenericAPIView):
             user = User.objects.get(email=email)
             current_site = get_current_site(request)
             mail_subject = 'Reset your Password account.'
-            jwt_token = jwt.encode({user.username: user.email}, 'private_key', algorithm='HS256').decode("utf-8")
-            to_email = user.email
-            mail_url = 'http://' + str(current_site.domain) + '/ResetPassword/' + jwt_token + '/'
-            message_short_url = get_surl(mail_url)  # short_url.sort_url_method(mail_url)
-            email = EmailMessage(
-                mail_subject,
-                message_short_url,
-                to=[to_email]
-            )
-            email.send()
-            return HttpResponse(content=str(message_short_url))
+
+            jwt_token = jwt.encode(
+                {user.username: user.email},
+                fundoo.settings.SECRET_KEY,
+                algorithm='HS256'
+            ).decode("utf-8")
+            mail_url = get_surl(jwt_token)
+            short_token = mail_url.split("/")
+
+            mail_url = 'http://' + str(current_site.domain) + '/reset_password/' + short_token[2] + '/'
+            ee.emit('messageEvent', mail_subject, user.email, mail_url)
+            response['status'] = True
+            response['message'] = 'Check your mail and reset your password'
+            return HttpResponse(json.dumps(response))
         except Exception as exception_detail:
-            return HttpResponse(json.dumps(str(exception_detail)))
+            return HttpResponse(json.dumps(response))
 
 
 # pylint: disable=line-too-long
@@ -195,31 +213,43 @@ class ResetPassword(GenericAPIView):
     # include the serializer class of reset password serializer
     serializer_class = PasswordResetSerialize
 
-    def post(self, request):
+    def post(self, request, token):
         """
         :param request: take the user input as username, password and confirm password
         :return: if user name is exist then send response password set successfully
                  other wise print error message
         """
+        token = ShortURL.objects.get(surl=token)
+        decoded_token = jwt.decode(token.lurl, fundoo.settings.SECRET_KEY, algorithms='HS256')
+        user = User.objects.get(username=list(decoded_token.keys())[0])
 
-        username = request.data['username']
         password1 = request.data['password1']
         password2 = request.data['password2']
+        response = {
+            'status': False,
+            'message': 'Something is wrong',
+            'data': []
+        }
 
         try:
             if password1 == "" or password2 == "":
-                return HttpResponse(json.dumps('password should not be empty!'))
+                response['message'] = 'password should not be empty!'
+                return HttpResponse(json.dumps(response))
             elif password1 != password2:
-                return HttpResponse(json.dumps('Your password does not match!'))
+                response['message'] = 'Your password does not match!'
+                return HttpResponse(json.dumps(response))
+            elif len(password1) < 5:
+                response['message'] = 'password size should be grater than 5 characters'
+                return HttpResponse(json.dumps(response))
 
-            user = User.objects.get(username=username)
             user.set_password(password1)
             user.save()
-            messages.info(request, "password reset done")
-            return HttpResponse('password Reset Done')
+            response['status'] = True
+            response['message'] = 'Your password is successfully update'
+            return HttpResponse(json.dumps(response))
 
         except Exception as exception_detail:
-            return HttpResponse(json.dumps(str(exception_detail)))
+            return HttpResponse(json.dumps(response))
 
 
 class UserProfile(GenericAPIView):

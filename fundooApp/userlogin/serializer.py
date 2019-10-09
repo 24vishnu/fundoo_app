@@ -30,7 +30,7 @@ class PasswordResetSerialize(serializers.ModelSerializer):
     class Meta:
         """ meta class of Password Reset class"""
         model = PasswordReset
-        fields = (['username', 'password1', 'password2'])
+        fields = (['password1', 'password2'])
 
 
 class ForgotPasswordSerializer(serializers.ModelSerializer):
