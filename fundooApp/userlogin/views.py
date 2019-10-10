@@ -1,6 +1,5 @@
 """
-views.py
-    In views.py file we implement the all required view api,s
+views.py: In views.py file we implement the all required view api,s
 
 author : vishnu kumar
 date : 28/09/2019
@@ -8,6 +7,7 @@ date : 28/09/2019
 
 import json
 
+import fundoo
 import jwt
 from django.contrib import messages
 from django.contrib.auth import authenticate
@@ -21,14 +21,12 @@ from django_short_url.models import ShortURL
 from django_short_url.views import get_surl
 from myservices import redis
 from myservices.decorators import login_decorator
+from myservices.event_emitter import ee
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
-
-import fundoo
 from rest_framework.response import Response
 
-from .event_emitter import *
 from .serializer import (
     RegistrationSerializer,
     LoginSerializer,
@@ -101,8 +99,7 @@ class UserRegistration(GenericAPIView):
             mail_url = get_surl(jwt_token)
             short_token = mail_url.split("/")
             mail_subject = 'Activate your account'
-            mail_url = 'http://' + str(current_site.domain) + '/login/activate/' + short_token[2] + '/'
-            # message_short_url = short_url.sort_url_method(mail_url)
+            mail_url = 'http://' + str(current_site.domain) + '/api/login/activate/' + short_token[2] + '/'
             ee.emit('messageEvent', mail_subject, email, mail_url)
             response['success'] = True
             response['message'] = "You are successfully registered " \
@@ -200,7 +197,7 @@ class ForgotPassword(GenericAPIView):
             mail_url = get_surl(jwt_token)
             short_token = mail_url.split("/")
 
-            mail_url = 'http://' + str(current_site.domain) + '/reset_password/' + short_token[2] + '/'
+            mail_url = 'http://' + str(current_site.domain) + '/api/reset_password/' + short_token[2] + '/'
             ee.emit('messageEvent', mail_subject, user.email, mail_url)
             response['status'] = True
             response['message'] = 'Check your mail and reset your password'

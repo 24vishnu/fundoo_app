@@ -95,3 +95,9 @@ class ImageUpload(models.Model):
 
     def __str__(self):
         return str(self.file_details)
+
+
+class Note(models.Model):
+    note_body = models.CharField(max_length=100)
+    note_file = models.FileField()
+    note_title = models.CharField(max_length=100)

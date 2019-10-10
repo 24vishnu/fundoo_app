@@ -62,7 +62,6 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
-    # 'social_core.backends.github.GithubOAuth2',
 )
 
 MIDDLEWARE = [
@@ -222,6 +221,3 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_URL = 'logout'
 LOGOUT_REDIRECT_URL = 'login'
 
-
-SOCIAL_AUTH_FACEBOOK_KEY = os.getenv("SOCIAL_AUTH_FACEBOOK_KEY")
-SOCIAL_AUTH_FACEBOOK_SECRET = os.getenv("SOCIAL_AUTH_FACEBOOK_SECRET")  # App Secret

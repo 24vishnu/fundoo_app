@@ -1,1 +1,1 @@
-U%fundooNote/migrations/0001_initial.py 2pyXh
+U%fundooNote/migrations/0001_initial.py 2pyXh

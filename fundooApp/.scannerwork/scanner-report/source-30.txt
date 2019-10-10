@@ -100,7 +100,6 @@ class UserRegistration(GenericAPIView):
             short_token = mail_url.split("/")
             mail_subject = 'Activate your account'
             mail_url = 'http://' + str(current_site.domain) + '/api/login/activate/' + short_token[2] + '/'
-            # message_short_url = short_url.sort_url_method(mail_url)
             ee.emit('messageEvent', mail_subject, email, mail_url)
             response['success'] = True
             response['message'] = "You are successfully registered " \

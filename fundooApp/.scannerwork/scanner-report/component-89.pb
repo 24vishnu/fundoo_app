@@ -1,1 +1,1 @@
-YfundooNote/apps.py 2pyXh
+YfundooNote/apps.py 2pyXh

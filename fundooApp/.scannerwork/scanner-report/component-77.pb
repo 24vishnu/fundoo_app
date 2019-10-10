@@ -1,1 +1,1 @@
-MfundooNote/urls.py 2pyX	h
+MfundooNote/urls.py 2pyX	h

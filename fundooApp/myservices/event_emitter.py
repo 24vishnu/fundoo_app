@@ -14,15 +14,16 @@ ee = BaseEventEmitter()
 
 
 @ee.on('messageEvent')
-def send_message(email, message_link):
+def send_message(mail_subject, email, message_link):
     """
+    :param mail_subject: subject of the email message
     :param email: this is sender email address (HOST MAIL)
     :param message_link: message link is a message body in this parameter we
             add the a link for receiver
     :return: we return the status what is the status after sending mail (success or failed)
     """
-
-    mail_subject = 'Activate your account.'
     mail_message = EmailMessage(mail_subject, message_link, to=[email])
     status = mail_message.send()
+    print('Done---------------')
     return status
+

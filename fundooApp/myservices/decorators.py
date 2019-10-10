@@ -17,6 +17,7 @@ def login_decorator(function):
 
         try:
             header = request.META["HTTP_AUTHORIZATION"]
+            print(header)
             decode = jwt.decode(header, settings.SECRET_KEY)
             user = User.objects.get(username=decode['username'])
             if redis_db.get(user.username) is not None:
