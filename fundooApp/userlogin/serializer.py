@@ -6,7 +6,7 @@ author : vishnu kumar
 date : 30/09/2019
 """
 from rest_framework import serializers
-from .models import Registration, UserLogin, PasswordReset, ForgotPassword, ImageUpload
+from .models import Registration, UserLogin, PasswordReset, ForgotPassword, ImageUpload, Note
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -49,3 +49,9 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImageUpload
         fields = ['file_details']
+
+
+class NoteShareSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Note
+        fields = ['note_title', 'note_body']

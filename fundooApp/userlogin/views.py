@@ -16,7 +16,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.validators import validate_email
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django_short_url.models import ShortURL
 from django_short_url.views import get_surl
 from myservices import redis
@@ -33,6 +33,7 @@ from .serializer import (
     PasswordResetSerialize,
     ForgotPasswordSerializer,
     FileSerializer,
+    NoteShareSerializer,
 )
 
 
@@ -290,10 +291,10 @@ class Upload(GenericAPIView):
             response['success'] = True
             response['message'] = 'You file is successfully uploaded'
             response['data'] = [file_serialize.data['file_details'], status.HTTP_201_CREATED]
-            return Response(json.dumps(response))
+            return Response(json.dumps(response, indent=1))
         else:
             response['message'] = [status.HTTP_400_BAD_REQUEST]
-            return Response(json.dumps(response))
+            return Response(json.dump(response))
 
 
 def activate(request, token):
@@ -322,6 +323,35 @@ def activate(request, token):
     return HttpResponse(json.dumps(response, indent=2))
 
 
+class ShareNote(GenericAPIView):
+    serializer_class = NoteShareSerializer
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        response = {
+            "status": False,
+            "message": "something went wrong",
+            "data": []
+        }
+        title = request.data['note_title']
+        contain = request.data['note_body']
+
+        if title != '' and contain != '':
+            context = {
+                'title': title,
+                'contain': contain,
+                'domain': request.build_absolute_uri
+            }
+            response['status'] = True
+            response['messages'] = "your Note data is going to share"
+            response['data'] = context
+
+            return render(request, 'home.html', context)
+        else:
+            response['message'] = 'please login before share note'
+        return HttpResponse(json.dumps(response, indent=1))
+
+
 def profile_view(request):
     return render(request, 'index.html')
 
@@ -330,6 +360,7 @@ def login(request):
     return render(request, 'login.html')
 
 
-@login_required
+# @login_required
 def home(request):
-    return render(request, 'home.html')
+    url = get_current_site(request).domain
+    return render(request, 'home.html', {'link': url})

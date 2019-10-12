@@ -3,9 +3,18 @@
     {% block content %}
 
         <h4 class="text-center">Welcome {{ user.username }}</h4>
-        <div>
+        <div align="right">
             <button>
                 <a href="{% url 'logout' %}">Logout</a>
             </button>
+        </div>
+        <div>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ domain }}">
+        Share on Facebook
+        </a>
+            <br>
+            <a href="https://twitter.com/intent/tweet?source=webclient&text={{ title }}{{ contain }}" >
+Share on Twitter
+</a>
         </div>
     {% endblock %}
