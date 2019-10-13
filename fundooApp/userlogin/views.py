@@ -26,6 +26,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from myservices.util import smd_response, valid_email
 
 from .serializer import (
     RegistrationSerializer,
@@ -53,35 +54,20 @@ class UserRegistration(GenericAPIView):
         :return: we send a activation link on user given mail if user input is valid
         """
 
-        # response is a dictionary SMD format default success is False
-        response = {
-            "success": False,
-            "message": "something went wrong",
-            "data": []
-        }
-
         username = request.data['username']
         email = request.data['email']
         password = request.data['password']
 
         # check user enter any empty field or not if any field is empty then give error
-        if username == "" or email == "" or password == "":
-            response['message'] = "Error :field should not be empty."
-            return HttpResponse(json.dumps(response, indent=1))
-        elif len(password) < 5:
-            response['message'] = "Error :password should be at least 5 character's"
-            return HttpResponse(json.dumps(response, indent=1))
-        elif User.objects.filter(email=email).exists():
-            response['message'] = "Email already exist. "
-            return HttpResponse(json.dumps(response))
-
         try:
-            # check given email is valid or not
-            try:
-                validate_email(email)
-            except:
-                response['message'] = 'email is not valid'
-                return HttpResponse(json.dumps(response))
+            if username == "" or email == "" or password == "":
+                raise Exception("Error :field should not be empty.")
+            elif len(password) < 5:
+                raise Exception("Error :password should be at least 5 character's")
+            elif not valid_email(email):
+                raise Exception("Email is not valid")
+            elif User.objects.filter(email=email).exists():
+                raise Exception("Email already exist. ")
 
             # if all user input data is correct then create user profile with given name, email and password and
             # then save in database
@@ -102,12 +88,10 @@ class UserRegistration(GenericAPIView):
             mail_subject = 'Activate your account'
             mail_url = 'http://' + str(current_site.domain) + '/api/login/activate/' + short_token[2] + '/'
             ee.emit('messageEvent', mail_subject, email, mail_url)
-            response['success'] = True
-            response['message'] = "You are successfully registered " \
-                                  ",Only you need to verify your Email"
-            return HttpResponse(json.dumps(response, indent=1), status=201)
+            response = smd_response(True, 'You are successfully registered', [{'username': username, 'email': email}])
         except Exception as exception_detail:
-            return HttpResponse(str(exception_detail))  # response, indent=1))
+            response = smd_response(False, str(exception_detail), [])
+        return Response(response)
 
 
 class UserLogin(GenericAPIView):
@@ -127,16 +111,10 @@ class UserLogin(GenericAPIView):
         username = request.data['username']
         password = request.data['password']
 
-        response = {
-            "status": False,
-            "message": "something went wrong",
-            "data": []
-        }
-
-        if username == "" or password == "":
-            response['message'] = 'Username/password should not be empty'
-            return HttpResponse(json.dumps(response, indent=1))
         try:
+            if username == "" or password == "":
+                raise KeyError('Username/password should not be empty')
+
             # authenticate username and password valid or not
             if authenticate(username=username, password=password) is not None:
                 jwt_token = jwt.encode({"username": username, "password": password},
@@ -144,16 +122,12 @@ class UserLogin(GenericAPIView):
                                        algorithm='HS256').decode("utf-8")
                 # set token in redis cache
                 redis.redis_db.set(username, jwt_token)
-                response['status'] = True
-                response['message'] = "You are successfully login"
-                response['data'] = {'Authorization key ': jwt_token}
-                print(redis.redis_db.get(username))
-                return HttpResponse(json.dumps(response, indent=1))
+                response = smd_response(True, "You are successfully login", {'Authorization key ': jwt_token})
             else:
-                response['message'] = "Incorrect Username or Password"
-                raise Exception("Incorrect Username or Password")
+                response = smd_response(False, "Incorrect credential", [])
         except Exception as exception_detail:
-            return HttpResponse(json.dumps(str(exception_detail)))
+            response = smd_response(False, str(exception_detail), [])
+        return Response(response)
 
 
 # pylint: disable= line-too-long
@@ -175,16 +149,12 @@ class ForgotPassword(GenericAPIView):
         :return:
         """
         email = request.data['email']
-        response = {
-            'status': False,
-            'message': 'Something is wrong',
-            'data': []
-        }
         try:
-            validate_email(email)
-            if email == "":
-                messages.info(request, "field should not be empty.")
-                raise Exception("field should not be empty.")
+            if not valid_email(email):
+                raise Exception('Email address is not valid')
+
+            if not User.objects.filter(email=email).exists():
+                raise Exception('Email does not exist!')
 
             user = User.objects.get(email=email)
             current_site = get_current_site(request)
@@ -200,11 +170,10 @@ class ForgotPassword(GenericAPIView):
 
             mail_url = 'http://' + str(current_site.domain) + '/api/reset_password/' + short_token[2] + '/'
             ee.emit('messageEvent', mail_subject, user.email, mail_url)
-            response['status'] = True
-            response['message'] = 'Check your mail and reset your password'
-            return HttpResponse(json.dumps(response))
+            response = smd_response(True, 'Check your mail and reset your password', [])
         except Exception as exception_detail:
-            return HttpResponse(json.dumps(response))
+            response = smd_response(False, str(exception_detail), [])
+        return Response(response)
 
 
 # pylint: disable=line-too-long
@@ -230,31 +199,21 @@ class ResetPassword(GenericAPIView):
 
         password1 = request.data['password1']
         password2 = request.data['password2']
-        response = {
-            'status': False,
-            'message': 'Something is wrong',
-            'data': []
-        }
 
         try:
             if password1 == "" or password2 == "":
-                response['message'] = 'password should not be empty!'
-                return HttpResponse(json.dumps(response))
+                raise KeyError('password should not be empty!')
             elif password1 != password2:
-                response['message'] = 'Your password does not match!'
-                return HttpResponse(json.dumps(response))
+                raise Exception('Your password does not match!')
             elif len(password1) < 5:
-                response['message'] = 'password size should be grater than 5 characters'
-                return HttpResponse(json.dumps(response))
+                raise ValueError('password size should be grater than 5 characters')
 
             user.set_password(password1)
             user.save()
-            response['status'] = True
-            response['message'] = 'Your password is successfully update'
-            return HttpResponse(json.dumps(response))
-
+            response = smd_response(True, 'Your password is successfully update', [])
         except Exception as exception_detail:
-            return HttpResponse(json.dumps(response))
+            response = smd_response(False, str(exception_detail), [])
+        return HttpResponse(response)
 
 
 class UserProfile(GenericAPIView):
@@ -271,8 +230,8 @@ class UserProfile(GenericAPIView):
         """
         :return:
         """
-        response = {"status": True, "message": "You are authenticated user", "data": []}
-        return HttpResponse(json.dumps(response, indent=1))
+        response = smd_response(True, "You are authenticated user", [])
+        return Response(response)
 
 
 class Upload(GenericAPIView):
@@ -280,29 +239,18 @@ class Upload(GenericAPIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        response = {
-            "success": False,
-            "message": "something went wrong",
-            "data": []
-        }
         file_serialize = FileSerializer(data=request.FILES)
         if file_serialize.is_valid():
             file_serialize.save()
-            response['success'] = True
-            response['message'] = 'You file is successfully uploaded'
-            response['data'] = [file_serialize.data['file_details'], status.HTTP_201_CREATED]
-            return Response(json.dumps(response, indent=1))
+            response = smd_response(True, 'You file is successfully uploaded',
+                                    {'link': file_serialize.data['file_details'], 'status': status.HTTP_201_CREATED})
         else:
-            response['message'] = [status.HTTP_400_BAD_REQUEST]
-            return Response(json.dump(response))
+            response = smd_response(False, 'file not uploaded', [])
+        return Response(response)
 
 
 def activate(request, token):
-    response = {
-        'status': False,
-        'message': 'something is wrong',
-        'data': []
-    }
+    global response
     try:
         token = ShortURL.objects.get(surl=token)
         decoded_token = jwt.decode(token.lurl, fundoo.settings.SECRET_KEY, algorithms='HS256')
@@ -313,14 +261,12 @@ def activate(request, token):
         if not user.is_active:
             user.is_active = True
             user.save()
-            response['status'] = True
-            response['message'] = 'Thank you for your email confirmation. Now you can login your account.'
+            response = smd_response(True, 'Thank you for your email confirmation. Now you can login your account.', [])
         elif user.is_active:
-            response['message'] = 'This like already used'
+            response = smd_response(False, 'Link already used', [])
     else:
-        response['message'] = 'This is not valid link'
-
-    return HttpResponse(json.dumps(response, indent=2))
+        response = smd_response(False, 'link is not correct', [])
+    return Response(response)
 
 
 class ShareNote(GenericAPIView):
