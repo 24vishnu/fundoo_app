@@ -1,1 +1,1 @@
-ZfundooNote/testredis.py 2pyXh
+ZfundooNote/apps.py 2pyXh

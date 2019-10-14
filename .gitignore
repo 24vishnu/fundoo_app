@@ -103,6 +103,6 @@ __pycache__
 
 # mkdocs documentation
 /site
-
+.scannerwork
 # mypy
 .mypy_cache/

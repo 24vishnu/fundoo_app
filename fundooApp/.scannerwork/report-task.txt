@@ -2,5 +2,5 @@ projectKey=fundoo
 serverUrl=http://localhost:9000
 serverVersion=6.7.1.35068
 dashboardUrl=http://localhost:9000/dashboard/index/fundoo
-ceTaskId=AW216UEDpnh_BMBsRrZ-
-ceTaskUrl=http://localhost:9000/api/ce/task?id=AW216UEDpnh_BMBsRrZ-
+ceTaskId=AW3Kfm-Y4Xi6uL4lhiah
+ceTaskUrl=http://localhost:9000/api/ce/task?id=AW3Kfm-Y4Xi6uL4lhiah

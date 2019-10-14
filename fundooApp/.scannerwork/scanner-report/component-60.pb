@@ -1,1 +1,1 @@
-<fundoo/settings.py 2pyXàh
+<	manage.py 2pyXh

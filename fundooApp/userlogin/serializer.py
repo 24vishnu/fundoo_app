@@ -54,4 +54,4 @@ class FileSerializer(serializers.ModelSerializer):
 class NoteShareSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
-        fields = ['note_title', 'note_body']
+        fields = ['author_id', 'note_title', 'note_body']

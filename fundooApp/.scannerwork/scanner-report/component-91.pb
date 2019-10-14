@@ -1,1 +1,1 @@
-[fundooNote/tests.py 2pyXh
+[fundooNote/testredis.py 2pyXh

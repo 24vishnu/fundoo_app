@@ -62,5 +62,27 @@
         "test4": {
             "email": "new_emil@"
         }
+    },
+  {
+    "test1": {
+      "author_id": false,
+      "note_title": "first note",
+      "note_body": "note content to share"
+    },
+    "test2": {
+      "author_id": 431,
+      "note_title": "",
+      "note_body": ""
+    },
+    "test3": {
+      "author_id":11,
+      "note_title": "",
+      "note_body": "note content to share"
+    },
+    "test4": {
+      "author_id": 15,
+      "note_title": "Note title",
+      "note_body": ""
     }
+  }
 ]

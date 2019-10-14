@@ -5,6 +5,7 @@ models.py
 author : vishnu kumar
 date : 29/09/2019
 """
+from django.contrib.auth.models import User
 from django.db import models
 from django.forms import forms
 
@@ -98,6 +99,7 @@ class ImageUpload(models.Model):
 
 
 class Note(models.Model):
+    author_id = models.ForeignKey(User, on_delete=models.CASCADE)
     note_body = models.CharField(max_length=100)
     note_file = models.FileField()
     note_title = models.CharField(max_length=100)

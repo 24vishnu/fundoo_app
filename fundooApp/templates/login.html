@@ -3,7 +3,14 @@
     {% block content %}
     {% load socialaccount %}
     {% providers_media_js %}
-
+<!--    <form action="http://127.0.0.1:8000/">-->
+<!--        <div align="center">-->
+<!--        Username <input type="text" placeholder="Enter your username"> <br><br>-->
+<!--        Password <input type="password" placeholder="Enter password"><br><br>-->
+<!--        <input type="submit" value="Login">-->
+<!--        </div>-->
+<!--    </form>-->
+<!--    <br>-->
              <button>
                 <a href="{% provider_login_url "google" method="oauth2" %}">Login with Google</a>
             </button>

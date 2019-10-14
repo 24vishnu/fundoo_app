@@ -5,28 +5,25 @@ author : vishnu kumar
 date : 28/09/2019
 """
 
-import json
-
 import fundoo
 import jwt
-from django.contrib import messages
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.validators import validate_email
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django_short_url.models import ShortURL
 from django_short_url.views import get_surl
 from myservices import redis
 from myservices.decorators import login_decorator
 from myservices.event_emitter import ee
+from myservices.util import smd_response, valid_email
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from myservices.util import smd_response, valid_email
 
 from .serializer import (
     RegistrationSerializer,
@@ -54,6 +51,7 @@ class UserRegistration(GenericAPIView):
         :return: we send a activation link on user given mail if user input is valid
         """
 
+        global response
         username = request.data['username']
         email = request.data['email']
         password = request.data['password']
@@ -235,10 +233,17 @@ class UserProfile(GenericAPIView):
 
 
 class Upload(GenericAPIView):
+    """
+    upload file use to upload our file like image for profile pic upload
+    """
     serializer_class = FileSerializer
     permission_classes = (AllowAny,)
 
     def post(self, request):
+        """
+        :param request: request file details which user need to post
+        :return: response in smd format
+        """
         file_serialize = FileSerializer(data=request.FILES)
         if file_serialize.is_valid():
             file_serialize.save()
@@ -250,6 +255,11 @@ class Upload(GenericAPIView):
 
 
 def activate(request, token):
+    """
+    :param request: request use for which user is requesting for activate there account
+    :param token: token is in jwt encoded it is in short length by using django shortUrl
+    :return: response of user request
+    """
     global response
     try:
         token = ShortURL.objects.get(surl=token)
@@ -270,43 +280,51 @@ def activate(request, token):
 
 
 class ShareNote(GenericAPIView):
+    """
+    Share Note API is used for share our note with note title and note content on social network
+    """
     serializer_class = NoteShareSerializer
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        response = {
-            "status": False,
-            "message": "something went wrong",
-            "data": []
-        }
+        """
+        :param request: request parameter use for get data of Note like note title and note content
+        :return: if note is not empty then render on share page
+        """
+        global response
+        user_pk = request.data['author_id']
         title = request.data['note_title']
-        contain = request.data['note_body']
+        content = request.data['note_body']
 
-        if title != '' and contain != '':
+        if title != '' and content != '':
             context = {
+                'Author': user_pk,
                 'title': title,
-                'contain': contain,
+                'content': content,
                 'domain': request.build_absolute_uri
             }
-            response['status'] = True
-            response['messages'] = "your Note data is going to share"
-            response['data'] = context
-
+            response = smd_response(True, "your Note data is going to share", context)
             return render(request, 'home.html', context)
         else:
-            response['message'] = 'please login before share note'
-        return HttpResponse(json.dumps(response, indent=1))
+            response = smd_response(False, 'Please enter something', [])
+        return Response(response)
 
 
-def profile_view(request):
-    return render(request, 'index.html')
-
-
-def login(request):
+def social_login(request):
+    """
+    :param request: social login request with user social profile
+    :return: render on social login page
+    """
     return render(request, 'login.html')
 
 
-# @login_required
+
+
+@login_required
 def home(request):
+    """
+    :param request: request for share data on social links
+    :return:
+    """
     url = get_current_site(request).domain
     return render(request, 'home.html', {'link': url})
