@@ -1,2 +1,0 @@
-^
-myservices :]_`hijk

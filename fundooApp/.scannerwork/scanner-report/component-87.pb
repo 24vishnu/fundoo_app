@@ -1,1 +1,0 @@
-W"fundooNote/migrations/0003_note.py 2pyXh
