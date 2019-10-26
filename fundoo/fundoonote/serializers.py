@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ExtendUser, Label
+from .models import ExtendUser, Label, FundooNote
 
 
 class FileSerializer(serializers.ModelSerializer):
@@ -11,10 +11,10 @@ class FileSerializer(serializers.ModelSerializer):
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
-        fields = ['name', 'user']
+        fields = ['name']
 
 
-class LabelModifySerializer(serializers.ModelSerializer):
+class NotesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Label
-        fields = ['name', 'user']
+        model = FundooNote
+        fields = ['title', 'note', 'label', 'url', 'archive', 'coll', 'image', 'reminder']

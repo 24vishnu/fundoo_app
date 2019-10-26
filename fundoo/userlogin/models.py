@@ -10,6 +10,7 @@ from django.db import models
 from django.forms import forms
 
 
+
 class Registration(models.Model):
     """
     user registration model class for Register new user

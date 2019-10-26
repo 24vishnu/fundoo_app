@@ -9,8 +9,6 @@ class NoteModelAdmin(admin.ModelAdmin):
     list_editable = ['note']
     list_filter = ['archive', 'note']
 
-    # search_fields = ['note', 'title']
-
     class Meta:
         model = FundooNote
 

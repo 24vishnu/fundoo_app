@@ -5,13 +5,12 @@ author : vishnu kumar
 date : 28/09/2019
 """
 
-import fundoo
-import jwt
+import logging
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
-from django.http import HttpResponse
 from django.shortcuts import render
 from django_short_url.models import ShortURL
 from django_short_url.views import get_surl
@@ -19,11 +18,12 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-
-from .myservices import redis
-from .myservices.decorators import login_decorator
-from .myservices.event_emitter import ee
-from .myservices.util import smd_response, valid_email
+from .services import (
+    redis,
+    util,
+)
+from .services.decorators import login_decorator
+from .services.event_emitter import ee
 from .serializer import (
     RegistrationSerializer,
     LoginSerializer,
@@ -32,6 +32,14 @@ from .serializer import (
     FileSerializer,
     NoteShareSerializer,
 )
+
+# file_dir = __file__
+# file_dir = file_dir.replace('views.py', 'services/logfile.log')
+# print(file_dir)
+# LOG_FORMAT = "%(levelname)s %(asctime)s - %(message)s"
+# logging.basicConfig(filename=file_dir, level=logging.DEBUG,
+#                     format=LOG_FORMAT, filemode='w')
+# logger = logging.getLogger()
 
 
 class UserRegistration(GenericAPIView):
@@ -61,7 +69,7 @@ class UserRegistration(GenericAPIView):
                 raise Exception("Error :field should not be empty.")
             elif len(password) < 5:
                 raise Exception("Error :password should be at least 5 character's")
-            elif not valid_email(email):
+            elif not util.valid_email(email):
                 raise Exception("Email is not valid")
             elif User.objects.filter(email=email).exists():
                 raise Exception("Email already exist. ")
@@ -75,19 +83,19 @@ class UserRegistration(GenericAPIView):
             current_site = get_current_site(request)
 
             # create jwt token this token is in byte form therefor we decode and convert into string format
-            jwt_token = jwt.encode(
-                {user.username: user.email},
-                fundoo.settings.SECRET_KEY,
-                algorithm='HS256'
-            ).decode("utf-8")
+            payload = {
+                user.username: user.email
+            }
+            jwt_token = util.create_token(payload)
             mail_url = get_surl(jwt_token)
             short_token = mail_url.split("/")
             mail_subject = 'Activate your account'
             mail_url = 'http://' + str(current_site.domain) + '/api/login/activate/' + short_token[2] + '/'
             ee.emit('messageEvent', mail_subject, email, mail_url)
-            response = smd_response(True, 'You are successfully registered', [{'username': username, 'email': email}])
+            response = util.smd_response(True, 'You are successfully registered',
+                                         [{'username': username, 'email': email}])
         except Exception as exception_detail:
-            response = smd_response(False, str(exception_detail), [])
+            response = util.smd_response(False, str(exception_detail), [])
         return Response(response)
 
 
@@ -115,21 +123,19 @@ class UserLogin(GenericAPIView):
 
             # authenticate username and password valid or not
             if authenticate(username=username, password=password) is not None:
-                jwt_token = jwt.encode({"username": username, "password": password},
-                                       fundoo.settings.SECRET_KEY,
-                                       algorithm='HS256').decode("utf-8")
+                payload = {"username": username, "password": password}
+                jwt_token = util.create_token(payload)
                 # set token in redis cache
                 redis.redis_db.set(username, jwt_token)
-                response = smd_response(True, "You are successfully login", {'Authorization key ': jwt_token})
+                response = util.smd_response(True, "You are successfully login", {'Authorization key ': jwt_token})
             else:
-                response = smd_response(False, "Incorrect credential", [])
+                response = util.smd_response(False, "Incorrect credential", [])
         except Exception as exception_detail:
-            response = smd_response(False, str(exception_detail), [])
+            response = util.smd_response(False, str(exception_detail), [])
         return Response(response)
 
 
-# pylint: disable= line-too-long
-# pylint: disable= no-self-use
+# pylint: disable= no-self-use, line-too-long
 class ForgotPassword(GenericAPIView):
     """
     Forgot password class user to send a activation link on user email
@@ -148,34 +154,28 @@ class ForgotPassword(GenericAPIView):
         """
         email = request.data['email']
         try:
-            if not valid_email(email):
+            if not util.valid_email(email):
                 raise Exception('Email address is not valid')
 
             if not User.objects.filter(email=email).exists():
                 raise Exception('Email does not exist!')
 
-            user = User.objects.get(email=email)
             current_site = get_current_site(request)
             mail_subject = 'Reset your Password account.'
-
-            jwt_token = jwt.encode(
-                {user.username: user.email},
-                fundoo.settings.SECRET_KEY,
-                algorithm='HS256'
-            ).decode("utf-8")
+            payload = {'email': email}
+            jwt_token = util.create_token(payload)
             mail_url = get_surl(jwt_token)
             short_token = mail_url.split("/")
 
             mail_url = 'http://' + str(current_site.domain) + '/api/reset_password/' + short_token[2] + '/'
-            ee.emit('messageEvent', mail_subject, user.email, mail_url)
-            response = smd_response(True, 'Check your mail and reset your password', [])
+            ee.emit('messageEvent', mail_subject, email, mail_url)
+            response = util.smd_response(True, 'Check your mail and reset your password', [])
         except Exception as exception_detail:
-            response = smd_response(False, str(exception_detail), [])
+            response = util.smd_response(False, str(exception_detail), [])
         return Response(response)
 
 
-# pylint: disable=line-too-long
-# pylint: disable= no-self-use
+# pylint: disable= no-self-use, line-too-long
 class ResetPassword(GenericAPIView):
     """
     Reset password class is used for user password change password
@@ -192,8 +192,8 @@ class ResetPassword(GenericAPIView):
                  other wise print error message
         """
         token1 = ShortURL.objects.get(surl=token)
-        decoded_token = jwt.decode(token1.lurl, fundoo.settings.SECRET_KEY, algorithms='HS256')
-        user = User.objects.get(username=list(decoded_token.keys())[0])
+        decoded_token = util.decode_token(token1.lurl)
+        user = User.objects.get(email=list(decoded_token.values())[0])
 
         password1 = request.data['password1']
         password2 = request.data['password2']
@@ -208,10 +208,10 @@ class ResetPassword(GenericAPIView):
 
             user.set_password(password1)
             user.save()
-            response = smd_response(True, 'Your password is successfully update', [])
+            response = util.smd_response(True, 'Your password is successfully update', [])
         except Exception as exception_detail:
-            response = smd_response(False, str(exception_detail), [])
-        return HttpResponse(response)
+            response = util.smd_response(False, str(exception_detail), [])
+        return Response(response)
 
 
 class UserProfile(GenericAPIView):
@@ -228,7 +228,7 @@ class UserProfile(GenericAPIView):
         """
         :return:
         """
-        response = smd_response(True, "You are authenticated user", [])
+        response = util.smd_response(True, "You are authenticated user", [])
         return Response(response)
 
 
@@ -249,10 +249,11 @@ class Upload(GenericAPIView):
         file_serialize = FileSerializer(data=request.FILES)
         if file_serialize.is_valid():
             file_serialize.save()
-            response = smd_response(True, 'You file is successfully uploaded',
-                                    {'link': file_serialize.data['file_details'], 'status': status.HTTP_201_CREATED})
+            response = util.smd_response(True, 'You file is successfully uploaded',
+                                         {'link': file_serialize.data['file_details'],
+                                          'status': status.HTTP_201_CREATED})
         else:
-            response = smd_response(False, 'file not uploaded', [])
+            response = util.smd_response(False, 'file not uploaded', [])
         return Response(response)
 
 
@@ -265,7 +266,7 @@ def activate(request, token):
     global response
     try:
         token = ShortURL.objects.get(surl=token)
-        decoded_token = jwt.decode(token.lurl, fundoo.settings.SECRET_KEY, algorithms='HS256')
+        decoded_token = util.decode_token(token.lurl)
         user = User.objects.get(username=list(decoded_token.keys())[0])
     except Exception:
         user = None
@@ -273,11 +274,12 @@ def activate(request, token):
         if not user.is_active:
             user.is_active = True
             user.save()
-            response = smd_response(True, 'Thank you for your email confirmation. Now you can login your account.', [])
+            response = util.smd_response(True, 'Thank you for your email confirmation. Now you can login your account.',
+                                         [])
         elif user.is_active:
-            response = smd_response(False, 'Link already used', [])
+            response = util.smd_response(False, 'Link already used', [])
     else:
-        response = smd_response(False, 'link is not correct', [])
+        response = util.smd_response(False, 'link is not correct', [])
     return Response(response)
 
 
@@ -305,10 +307,10 @@ class ShareNote(GenericAPIView):
                 'content': content,
                 'domain': request.build_absolute_uri
             }
-            response = smd_response(True, "your Note data is going to share", context)
+            response = util.smd_response(True, "your Note data is going to share", context)
             return render(request, 'home.html', context)
         else:
-            response = smd_response(False, 'Please enter something', [])
+            response = util.smd_response(False, 'Please enter something', [])
         return Response(response)
 
 

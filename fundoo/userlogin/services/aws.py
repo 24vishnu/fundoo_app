@@ -1,10 +1,9 @@
 import boto3
 
-# import fundoo
+
 from fundoo.fundoo.settings import AWS_STORAGE_BUCKET_NAME
 
 
-# print(settings.MEDIA_ROOT)
 def aws_file_upload(file_path, file_name=None):
     if file_name is None:
         file_name = file_path

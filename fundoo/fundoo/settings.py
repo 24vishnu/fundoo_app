@@ -16,7 +16,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -38,7 +37,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    'fundooNote',
+    'fundoonote',
     'userlogin',
     'django_short_url',
     'django.contrib.sites',
@@ -199,9 +198,6 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
-# MEDIA_URL = '/media/'
-# MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
 
 # S3 variables name
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
@@ -216,3 +212,4 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_URL = 'logout'
 LOGOUT_REDIRECT_URL = 'login'
+

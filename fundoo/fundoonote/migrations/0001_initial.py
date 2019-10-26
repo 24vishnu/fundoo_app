@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ('pin', models.BooleanField(default=False)),
                 ('url', models.URLField(blank=True)),
                 ('coll', models.ManyToManyField(blank=True, related_name='coll', to=settings.AUTH_USER_MODEL)),
-                ('label', models.ManyToManyField(blank=True, related_name='label', to='fundooNote.Label')),
+                ('label', models.ManyToManyField(blank=True, related_name='label', to='fundoonote.Label')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='user', to=settings.AUTH_USER_MODEL)),
             ],
         ),

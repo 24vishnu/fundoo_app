@@ -2,6 +2,7 @@
 tests.py
 TDD functionality for our userlogin module
 """
+import os
 import json
 import requests
 
@@ -16,12 +17,11 @@ class TestAPI:
     in TestApi class we test login functionality,
     registration functionality and reset password functionality
     """
-    login_url = "http://localhost:8000/api/login/"
-    register_url = "http://localhost:8000/api/signup/"
-    forgot_password_url = "http://localhost:8000/api/forgot_password/"
-    pass_reset_url = "http://localhost:8000/api/reset_password/"
-    share_note_url = "http://localhost:8000/api/share_note/"
-
+    login_url = os.getenv('LOGIN_URL')
+    register_url = os.getenv('REGISTER_URL')
+    forgot_password_url = os.getenv('FORGOT_PASSWORD_URL')
+    pass_reset_url = os.getenv('PASSWORD_RESET_URL')
+    share_note_url = os.getenv('SHARE_NOTE_URL')
 #     # login test cases
 #     def test_login1(self):
 #         """

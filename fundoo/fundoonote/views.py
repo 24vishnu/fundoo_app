@@ -1,43 +1,74 @@
-import json
-
-from django.http import HttpResponse
-from django.shortcuts import render
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from userlogin.services import util as servicesnote
 
 from .models import Label
-from .serializers import FileSerializer, LabelSerializer, LabelModifySerializer
+from .serializers import FileSerializer, LabelSerializer
 
 
 class FundooLabelCreate(GenericAPIView):
     serializer_class = LabelSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-        label_serializer = LabelSerializer(data=request.data)
         try:
-            if label_serializer.is_valid():
-                label_serializer.save()
+            user = request.user
+            name = request.data["name"]
+            label = Label.objects.create(name=name, user_id=user.id)
+            label.save()
+            response = servicesnote.smd_response(True, 'You are successfully saved', [])
         except Exception as e:
-            return HttpResponse('exception', str(e))
-        return HttpResponse('OK')
+            response = servicesnote.smd_response(False, str(e), [])
+        return Response(response)
+
+    def get(self, request):
+        global response
+        try:
+            get_label = Label.objects.filter(user_id=request.user.id)
+            print()
+            p = [get_label.values()[x]['name'] for x in range(len(get_label))]
+            # q = [x[1] for x in get_label]
+            print('-----------', p)
+            # print('-----------', q)
+            response = servicesnote.smd_response(True, 'following is your label', [p])
+        except Exception as e:
+            response = servicesnote.smd_response(False, str(e), [])
+        return Response(response)
 
 
 class FundooLabelDelete(GenericAPIView):
-    serializer_class = LabelModifySerializer
+    serializer_class = LabelSerializer
+    permission_classes = (IsAuthenticated,)
 
-    def delete(self, request, name):
-        smd = {"success": True, "message": "note is deleted", "data": []}
+    def delete(self, request, id):
         try:
-            lab = Label.objects.get(name=name)
-            lab.delete()
+            get_label = Label.objects.get(id=id, user_id=request.user.id)
+
+            get_label.delete()
+            response = servicesnote.smd_response(True, 'note is successfully deleted', [])
         except Label.DoesNotExist as e:
-            print('1')
-            smd['message'] = str(e)
-        return HttpResponse(json.dumps(smd))
+            response = servicesnote.smd_response(False, str(e), [])
+        return Response(response)
+
+    def put(self, request, id):
+        global response
+        put_serializer = LabelSerializer(data=request.data)
+        try:
+            get_label = Label.objects.get(id=id, user_id=request.user.id)
+            if get_label is not None:
+                if put_serializer.is_valid():
+                    get_label.name = put_serializer.data['name']
+                    get_label.save()
+                    response = servicesnote.smd_response(True, 'Updated', [])
+            else:
+                response = servicesnote.smd_response(False, 'label not valid', [])
+        except Label.DoesNotExist as e:
+            response = servicesnote.smd_response(False, str(e), [])
+        return Response(response)
+
 
 class HelloView(APIView):
     permission_classes = (IsAuthenticated,)
