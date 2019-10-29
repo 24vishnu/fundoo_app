@@ -21,16 +21,17 @@ class Label(models.Model):
 class FundooNote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user')
     title = models.CharField(max_length=100, blank=True)
-    note = models.CharField(max_length=500, )
+    content = models.CharField(max_length=500, )
     image = models.ImageField(max_length=500, blank=True, null=True, upload_to="image")
-    archive = models.BooleanField("is_archived", default=False)
-    delete_note = models.BooleanField("delete_note", default=False)
+    is_archive = models.BooleanField("archived", default=False)
+    is_delete = models.BooleanField("delete", default=False)
     label = models.ManyToManyField(Label, related_name="label", blank=True)
-    coll = models.ManyToManyField(User, related_name='coll', blank=True)
-    copy = models.BooleanField("make a copy", default=False)
-    checkbox = models.BooleanField("check box", default=False)
-    pin = models.BooleanField(default=False)
+    collaborate = models.ManyToManyField(User, related_name='collaborate', blank=True)
+    is_copy = models.BooleanField("make a copy", default=False)
+    is_check = models.BooleanField("check box", default=False)
+    is_pin = models.BooleanField(default=False)
     url = models.URLField(blank=True)
+    reminder = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
-        return self.note
+        return self.title

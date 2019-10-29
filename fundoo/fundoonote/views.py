@@ -1,3 +1,7 @@
+import json
+
+from django.contrib.auth.models import User
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -5,8 +9,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from userlogin.services import util as servicesnote
 
-from .models import Label
-from .serializers import FileSerializer, LabelSerializer
+from .models import Label, FundooNote
+from .serializers import FileSerializer, LabelSerializer, NotesSerializer
 
 
 class FundooLabelCreate(GenericAPIView):
@@ -68,6 +72,44 @@ class FundooLabelDelete(GenericAPIView):
         except Label.DoesNotExist as e:
             response = servicesnote.smd_response(False, str(e), [])
         return Response(response)
+
+
+class FundooNoteCreate(GenericAPIView):
+    serializer_class = NotesSerializer
+
+    # permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        note_data = NotesSerializer(data=request.data, partial=True)
+        try:
+
+            labels = note_data.initial_data['label']
+            note_data.initial_data['label'] = [Label.objects.get(name=x).id
+                                               if Label.objects.filter(name=x).exists()
+                                               else "Label not exist" for x in labels]
+            collaborate = note_data.initial_data['collaborate']
+            note_data.initial_data['collaborate'] = [User.objects.get(username=x).id if
+                                                     User.objects.filter(username=x).exists()
+                                                     else "For collaborate user not exist" for x in collaborate]
+
+            print(note_data.initial_data)
+            if note_data.is_valid():
+                print('yes valid')
+                user = request.user
+                note_data.save(user_id=user.id)
+                response = servicesnote.smd_response(True, 'Your note is successfully created', [])
+                # return Response(response)
+            else:
+                print('Not valid')
+                response = servicesnote.smd_response(True, note_data.errors, [])
+        except KeyError as p:
+            print('pppppp', p)
+            response = servicesnote.smd_response(False, str(p), [])
+        return Response(response)
+
+
+class FundooNoteModification(GenericAPIView):
+    pass
 
 
 class HelloView(APIView):
