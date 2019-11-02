@@ -1,28 +1,29 @@
-import json
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.shortcuts import HttpResponse
+from docutils.nodes import status
+from rest_framework import status
+
 from .redis import redis_db
+from .util import smd_response
 
 
 def login_decorator(function):
     def wrapper(request):
 
-        response = {
-            "status": False,
-            "message": "you are not a valid user",
-            'data': []
-        }
+        response = smd_response(False, "You are not logged in", [], status.HTTP_401_UNAUTHORIZED)
 
         try:
             header = request.META["HTTP_AUTHORIZATION"]
             print(header)
             decode = jwt.decode(header, settings.SECRET_KEY)
-            user = User.objects.get(username=decode['username'])
-            if redis_db.get(user.username) is not None:
+            if redis_db.get(decode['username']) is not None:
                 return function(request)
+            else:
+                user = User.objects.get(username=decode['username'])
+                if user is not None:
+                    return function(request)
         except (Exception, TypeError):
-            return HttpResponse(json.dumps(response))
+            return response
 
     return wrapper

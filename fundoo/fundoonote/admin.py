@@ -4,9 +4,8 @@ from .models import FundooNote, Label
 
 
 class NoteModelAdmin(admin.ModelAdmin):
-    list_display = ['title', 'content', 'is_archive']
+    list_display = ['user', 'title', 'content', 'is_archive']
     list_display_links = ['title']
-    # list_editable = ['content']
     list_filter = ['is_archive', 'content']
 
     class Meta:

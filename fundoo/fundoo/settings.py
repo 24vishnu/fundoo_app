@@ -1,3 +1,4 @@
+import logging
 import os
 
 from dotenv import load_dotenv, find_dotenv
@@ -143,14 +144,22 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTTokenUserAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication'
+    )
+    ,
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+}
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-REST_FRAMEWORK = {
+REST_FRAMEWORKS = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTTokenUserAuthentication',
-
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
     ,
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
@@ -173,7 +182,7 @@ SWAGGER_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=400),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -213,3 +222,8 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_URL = 'logout'
 LOGOUT_REDIRECT_URL = 'login'
 
+# %(pathname)s : %(filename)s : %(module)s : %(lineno)d : %(funcName)s : %(created)f : %(asctime)s :  %(msecs)d  : %(
+# relativeCreated) : %(thread)d : %(threadName)s : %(process)d : %(message)s
+formatter = logging.Formatter('%(levelname)s : %(asctime)s : %(lineno)d : %(pathname)s : %(name)s : %(message)s')
+file_handler = logging.FileHandler('fundoo.log', 'a')
+file_handler.setFormatter(formatter)

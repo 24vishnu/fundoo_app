@@ -5,53 +5,78 @@ serializer.py
 author : vishnu kumar
 date : 30/09/2019
 """
+from django.contrib.auth.models import User
 from rest_framework import serializers
-from .models import Registration, UserLogin, PasswordReset, ForgotPassword, ImageUpload, Note
+
+from .models import UserProfile
+
+
+def email_validation(email):
+    if User.objects.filter(email=email).exists():
+        raise serializers.ValidationError("Email already exist")
+    return email
+
+
+def username_validation(username):
+    if User.objects.filter(username=username).exists():
+        raise serializers.ValidationError("Username already exist")
+    return username
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
     """ Registration serializer class"""
+    username = serializers.CharField(max_length=100, validators=[username_validation])
+    email = serializers.EmailField(max_length=150, validators=[email_validation])
+    password = serializers.CharField(max_length=50)
 
     class Meta:
         """ Meta class of Registration serializer class"""
-        model = Registration
-        fields = '__all__'
+        model = User
+        fields = ['username', 'email', 'password']
 
 
 class LoginSerializer(serializers.ModelSerializer):
     """ This is Login serializer class """
+    username = serializers.CharField(max_length=100)
+    password = serializers.CharField(max_length=50)
 
     class Meta:
         """ Meta class of Login serializer class """
-        model = UserLogin
+        model = User
         fields = (['username', 'password'])
 
 
 class PasswordResetSerialize(serializers.ModelSerializer):
     """ This is Password Reset class"""
+    password = serializers.CharField(max_length=50)
+    confirm_password = serializers.CharField(max_length=50)
 
     class Meta:
         """ meta class of Password Reset class"""
-        model = PasswordReset
-        fields = (['password1', 'password2'])
+        model = User
+        fields = (['password', 'confirm_password'])
 
 
 class ForgotPasswordSerializer(serializers.ModelSerializer):
     """ This is Forgot password serializer class"""
+    email = serializers.EmailField(max_length=150)
 
     class Meta:
         """ Meta class of Forgot password serializer class"""
-        model = ForgotPassword
+        model = User
         fields = (['email'])
 
 
 class FileSerializer(serializers.ModelSerializer):
+    file_details = serializers.FileField(default=False)
+
     class Meta:
-        model = ImageUpload
+        model = User
         fields = ['file_details']
 
 
-class NoteShareSerializer(serializers.ModelSerializer):
+class UploadSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Note
-        fields = ['author_id', 'note_title', 'note_body']
+        model = UserProfile
+        fields = ['image']
+
