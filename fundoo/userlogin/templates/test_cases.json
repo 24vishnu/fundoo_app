@@ -29,24 +29,40 @@
         "test_user4": {
             "username": "new_user",
             "email": "new_emil@",
-            "password": ""}
+            "password": ""},
+      "test_user5": {
+            "username": "test",
+            "email": "test@gmail.com",
+            "password": "testpassword"}
     },
   {
     "test1": {
-      "password1": "admin",
-      "password2": "admin"
+      "password": "admin",
+      "confirm_password": "admin"
     },
     "test2": {
-      "password1": "",
-      "password2": "admin1"
+      "password": "",
+      "confirm_password": "admin1"
     },
     "test3": {
-      "password1": "",
-      "password2": ""
+      "password": "",
+      "confirm_password": ""
     },
     "test4": {
-      "password1": "new12345",
-      "password2": ""
+      "password": "new12345",
+      "confirm_password": ""
+    },
+    "token1":{
+      "token": "3DV8NsSdXKPT4GRwYGMYDN/"
+    },
+    "token2":{
+      "token":"mEAdhNbuzhVruSknMPxCac/"
+    },
+    "token3":{
+      "token": "3gV8NsSdXKPT4GRwYGMYDN/"
+    },
+    "token4":{
+      "token":"mEAdhNb0kzhVruSknMPxCac/"
     }
   },
   {
@@ -65,24 +81,20 @@
     },
   {
     "test1": {
-      "author_id": false,
-      "note_title": "first note",
-      "note_body": "note content to share"
+      "title": "first note",
+      "content": "note content to share"
     },
     "test2": {
-      "author_id": 431,
-      "note_title": "",
-      "note_body": ""
+      "title": "",
+      "content": ""
     },
     "test3": {
-      "author_id":11,
-      "note_title": "",
-      "note_body": "note content to share"
+      "title": "",
+      "content": "note content to share"
     },
     "test4": {
-      "author_id": 15,
-      "note_title": "Note title",
-      "note_body": ""
+      "title": "Note title",
+      "content": ""
     }
   }
 ]

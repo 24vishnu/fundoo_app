@@ -11,6 +11,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 from django_short_url.models import ShortURL
 from django_short_url.views import get_surl
 from fundoo.settings import file_handler
@@ -27,12 +28,12 @@ from .serializer import (
     ForgotPasswordSerializer,
     UploadSerializer,
 )
-from .services import (
+from services import (
     redis,
     util,
 )
-from .services.decorators import login_decorator
-from .services.event_emitter import ee
+from services.decorators import login_decorator
+from services.event_emitter import ee
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -48,6 +49,7 @@ class UserRegistration(GenericAPIView):
     # we need to include serialize class
     serializer_class = RegistrationSerializer
 
+    @csrf_exempt
     def post(self, request):
         """
         :param request: user request for send information for register the user
@@ -64,7 +66,7 @@ class UserRegistration(GenericAPIView):
                 raise KeyError('username and password field is not present')
 
             if not serialized_data.is_valid():
-                logger.error('serializer data is not valid.')
+                logger.error('RegistrationSerializer data is not valid.')
                 raise ValueError('please enter valid', [k for k in serialized_data.errors.keys()])
 
             username = serialized_data.initial_data['username']
@@ -80,7 +82,7 @@ class UserRegistration(GenericAPIView):
             elif password == "":
                 logger.error('Empty password field')
                 raise ValueError("Error :password field should not be empty.")
-            elif util.password_validator(password):
+            elif not util.password_validator(password):
                 logger.error('password length is short.')
                 raise ValueError("Error :password should be at least 5 character's")
             elif not util.valid_email(email):
@@ -108,10 +110,10 @@ class UserRegistration(GenericAPIView):
                                          http_status=status.HTTP_201_CREATED)
             logger.info('User successfully registered')
         except (KeyError, ValueError) as error:
-            response = util.smd_response(message=str(error), http_status=status.HTTP_404_NOT_FOUND)
+            response = util.smd_response(message=str(error), http_status=status.HTTP_400_BAD_REQUEST)
         except Exception as exception_detail:
             logger.error(exception_detail)
-            response = util.smd_response(message=str(exception_detail), http_status=status.HTTP_400_BAD_REQUEST)
+            response = util.smd_response(message=str(exception_detail), http_status=status.HTTP_404_NOT_FOUND)
         return response
 
 
@@ -137,7 +139,7 @@ class UserLogin(GenericAPIView):
                 logger.error('username or password field not present')
                 raise EnvironmentError('username or password field not present')
             if not serialized_data.is_valid():
-                logger.error('serialized data not valid')
+                logger.error('LoginSerializer serialized data not valid')
                 raise ValueError('please enter valid', [k for k in serialized_data.errors.keys()])
 
             username = serialized_data.data['username']
@@ -156,12 +158,13 @@ class UserLogin(GenericAPIView):
                 redis.redis_db.set(username, jwt_token)
                 # todo all small latter : DONE
                 response = util.smd_response(success=True, message="You are successfully login",
-                                             data={'authorization_key ': jwt_token}, http_status=status.HTTP_201_CREATED)
+                                             data={'authorization_key ': jwt_token},
+                                             http_status=status.HTTP_201_CREATED)
                 logger.info('user  successful login.')
             else:
                 logger.error('Incorrect credential')
                 response = util.smd_response(message="Incorrect credential",
-                                             http_status=status.HTTP_401_UNAUTHORIZED)
+                                             http_status=status.HTTP_400_BAD_REQUEST)
         except Exception as exception_detail:
             response = util.smd_response(message=str(exception_detail), http_status=status.HTTP_400_BAD_REQUEST)
         return response
@@ -215,7 +218,7 @@ class ForgotPassword(GenericAPIView):
                                              http_status=status.HTTP_200_OK)
                 logger.info('password link send on email')
             else:
-                logger.error('serializer data not valid')
+                logger.error('ForgotPasswordSerializer serializer data not valid')
                 response = util.smd_response(message='serializer data not valid',
                                              http_status=status.HTTP_400_BAD_REQUEST)
         except Exception as exception_detail:
@@ -269,7 +272,7 @@ class ResetPassword(GenericAPIView):
             logger.info('password update successfully')
         except Exception as exception_detail:
             logger.error('Invalid token')
-            response = util.smd_response(message=str(exception_detail), http_status=status.HTTP_404_NOT_FOUND)
+            response = util.smd_response(message=str(exception_detail), http_status=status.HTTP_400_BAD_REQUEST)
         return response
 
 
@@ -287,8 +290,12 @@ class Profile(GenericAPIView):
         """
         :return:
         """
-        response = util.smd_response(success=True, message="You are authenticated user", http_status=status.HTTP_200_OK)
-        logger.info('user entered into there profile')
+        try:
+            response = util.smd_response(success=True, message="You are authenticated user",
+                                         http_status=status.HTTP_200_OK)
+            logger.info('user entered into there profile')
+        except:
+            response = util.smd_response(message="something is wrong", http_status=status.HTTP_404_NOT_FOUND)
         return response
 
 
@@ -318,7 +325,7 @@ class Upload(GenericAPIView):
                                              http_status=status.HTTP_201_CREATED)
                 logger.info('file uploaded')
             else:
-                logger.error('serializer data not valid')
+                logger.error('UploadSerializer serializer data not valid')
                 response = util.smd_response(message='file not uploaded', http_status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.error(e)
@@ -372,28 +379,32 @@ def activate(request, token):
     :return: response of user request
     """
     try:
-        # pdb.set_trace()
-        token = ShortURL.objects.get(surl=token)
-        decoded_token = util.decode_token(token.lurl)
-        user = User.objects.get(username=list(decoded_token.keys())[0])
-    except Exception as e:
-        logger.error('Invalid token')
-        user = None
-    if user is not None:
-        if not user.is_active:
-            user.is_active = True
-            user.save()
-            response = util.smd_response(success=True,
-                                         message='Thank you for confirmation.',
-                                         http_status=status.HTTP_202_ACCEPTED)
-            logger.info('user email confirmation done')
+        try:
+            # pdb.set_trace()
+            token = ShortURL.objects.get(surl=token)
+            decoded_token = util.decode_token(token.lurl)
+            user = User.objects.get(username=list(decoded_token.keys())[0])
+        except Exception as e:
+            logger.error('Invalid token')
+            user = None
+        if user is not None:
+            if not user.is_active:
+                user.is_active = True
+                user.save()
+                response = util.smd_response(success=True,
+                                             message='Thank you for confirmation.',
+                                             http_status=status.HTTP_202_ACCEPTED)
+                logger.info('user email confirmation done')
+            else:
+                logger.error('linked already used')
+                response = util.smd_response(message='Link already used',
+                                             http_status=status.HTTP_208_ALREADY_REPORTED)
         else:
-            logger.error('linked already used')
-            response = util.smd_response(message='Link already used',
-                                         http_status=status.HTTP_208_ALREADY_REPORTED)
-    else:
-        response = util.smd_response(message='link is not correct',
-                                     http_status=status.HTTP_400_BAD_REQUEST)
+            response = util.smd_response(message='link is not correct',
+                                         http_status=status.HTTP_400_BAD_REQUEST)
+    except:
+        response = util.smd_response(message='something is wrong',
+                                     http_status=status.HTTP_404_NOT_FOUND)
     return response
 
 
@@ -403,9 +414,12 @@ def social_login(request):
     :return: render on social login page
     """
     # pdb.set_trace()
-    logger.info('social login')
-    url = request.build_absolute_uri(reverse('userlogin:login'))
-    return render(request, 'login.html', {'link': url})
+    try:
+        logger.info('social login')
+        url = request.build_absolute_uri(reverse('userlogin:login'))
+        return render(request, 'login.html', {'link': url})
+    except:
+        return util.smd_response(message='something is wrong', http_status=status.HTTP_404_NOT_FOUND)
 
 
 @login_required
@@ -414,5 +428,8 @@ def home(request):
     :param request: request for share data on social links
     :return:
     """
-    url = request.build_absolute_uri()
-    return render(request, 'home.html', {'link': url})
+    try:
+        url = request.build_absolute_uri()
+        return render(request, 'home.html', {'link': url})
+    except:
+        return util.smd_response(message='something is wrong', http_status=status.HTTP_404_NOT_FOUND)

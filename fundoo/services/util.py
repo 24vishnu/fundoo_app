@@ -43,7 +43,6 @@ def decode_token(token):
 
 
 def token_encode(uer):
-    print('-==========-=-=-=--==--------------===',os.getenv("TOKEN_URL"))
     token = requests.post(url=os.getenv("TOKEN_URL"), data=uer)
     token1 = token.json()['access']
     return token1

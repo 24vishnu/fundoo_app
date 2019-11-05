@@ -24,6 +24,5 @@ def send_message(mail_subject, email, message_link):
     """
     mail_message = EmailMessage(mail_subject, message_link, to=[email])
     status = mail_message.send()
-    print('Done---------------')
     return status
 

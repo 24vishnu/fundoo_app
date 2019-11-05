@@ -11,7 +11,7 @@ from .util import smd_response
 def login_decorator(function):
     def wrapper(request):
 
-        response = smd_response(False, "You are not logged in", [], status.HTTP_401_UNAUTHORIZED)
+        response = smd_response(message="You are not logged in", http_status=status.HTTP_401_UNAUTHORIZED)
 
         try:
             header = request.META["HTTP_AUTHORIZATION"]
