@@ -11,7 +11,7 @@ class LabelSerializer(serializers.ModelSerializer):
 class NotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = FundooNote
-        fields = ['title', 'content', 'label', 'is_archive', 'collaborate', 'image', 'reminder']
+        fields = ['title', 'content', 'label', 'is_archive', 'is_trashed', 'collaborate', 'image', 'reminder']
 
 
 class NoteShareSerializer(serializers.ModelSerializer):

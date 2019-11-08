@@ -1,14 +1,30 @@
+import logging
 import os
 import re
 
 import jwt
+import redis
 import requests
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
 from rest_framework import status
 
+from fundoo.settings import file_handler
+
+from fundoo.url_settings import r_db, redis_port
+from fundoonote.models import FundooNote, Label
+from fundoonote.serializers import NotesSerializer
+from rest_framework.response import Response
+
+redis_db = redis.StrictRedis(host="localhost", db=r_db, port=redis_port)
 SECRET_KEY = os.getenv("SECRET_KEY")
+activate_secret_key = os.getenv("REGISTRATION_SECRET_KEY")
+reset_secret_key = os.getenv("FORGOT_PASSWORD_SECRET_KEY")
+
 User = get_user_model()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(file_handler)
 
 
 def smd_response(success=False, message='', data=None, http_status=None):
@@ -42,8 +58,8 @@ def decode_token(token):
     return original_value
 
 
-def token_encode(uer):
-    token = requests.post(url=os.getenv("TOKEN_URL"), data=uer)
+def token_encode(original_data):
+    token = requests.post(url=os.getenv("TOKEN_URL"), data=original_data)
     token1 = token.json()['access']
     return token1
 
@@ -51,7 +67,7 @@ def token_encode(uer):
 def password_validator(password):
     error = ''
 
-    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # reg = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!#%*?&]{5,20}$"
     reg = '^(?=.{5,50}$).*'
     # compiling regex
@@ -63,7 +79,7 @@ def password_validator(password):
         return True
     else:
         return False
-    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # while True:
     #     if len(password) < 5:
     #         # flag = -1
@@ -90,10 +106,45 @@ def password_validator(password):
     #         return True
 
 
+def activate_jwt_token(payload):
+    token = jwt.encode(payload, activate_secret_key, algorithm='HS256').decode('utf-8')
+    return token
+
+
+def decode_activate_token(token):
+    original_value = jwt.decode(token, activate_secret_key, algorithms='HS256')
+    return original_value
+
+
+def password_jwt_encode(payload):
+    token = jwt.encode(payload, reset_secret_key, algorithm='HS256').decode('utf-8')
+    return token
+
+
+def password_jwt_decode(token):
+    original_value = jwt.decode(token, reset_secret_key, algorithms='HS256')
+    return original_value
+
+
+def write_through(request):
+    logger.info("No data found in redis cache" + ' for %s', request.user)
+    get_note = FundooNote.objects.filter(user_id=request.user.id)
+    note_data = NotesSerializer(get_note, many=True)
+    try:
+        for i in range(len(note_data.data)):
+            note_data.data[i]['label'] = [Label.objects.get(id=x).name
+                                          for x in note_data.data[i]['label']]
+            note_data.data[i]['collaborate'] = [User.objects.get(id=x).email
+                                                for x in note_data.data[i]['collaborate']]
+    except Exception:
+        raise ValueError("some data not present in database")
+    i = 0
+    logger.info("insert notes into redis cache" + ' for %s', request.user)
+    for data in note_data.data:
+        redis_db.hmset(str(request.user.id) + 'note',
+                       {get_note.values()[i]['id']: {k: v for k, v in data.items()}})
+        i += 1
+
 
 if __name__ == '__main__':
-    payload = {
-        "A": 'a',
-        "B": 'b'
-    }
-    token_encode(payload)
+    pass

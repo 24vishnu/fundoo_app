@@ -5,7 +5,7 @@ from .models import FundooNote, Label
 
 class NoteModelAdmin(admin.ModelAdmin):
     list_display = ['user', 'title', 'content', 'is_archive']
-    list_display_links = ['title']
+    list_display_links = ['user', 'title']
     list_filter = ['is_archive', 'content']
 
     class Meta:

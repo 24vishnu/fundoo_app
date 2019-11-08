@@ -6,8 +6,9 @@ date : 28/09/2019
 """
 import logging
 import pdb
-
-from django.contrib.auth import authenticate
+# decouple package work on .env, .ini
+# from decouple import config
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import render
@@ -17,7 +18,7 @@ from django_short_url.views import get_surl
 from fundoo.settings import file_handler
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.reverse import reverse
 
 from .models import UserProfile
@@ -39,6 +40,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
 
+
+# we con use like following config method
+# DEBUG = config('REDIS_PORT', default=8000, cast=int)
+# print(DEBUG)
 
 class UserRegistration(GenericAPIView):
     """
@@ -150,7 +155,9 @@ class UserLogin(GenericAPIView):
                 raise KeyError('Username/password should not be empty')
 
             # authenticate username and password valid or not
-            if authenticate(username=username, password=password) is not None:
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
                 payload = {"username": username, 'password': password}
                 jwt_token = util.token_encode(payload)
                 # print(util.token_encode(payload))
@@ -158,9 +165,9 @@ class UserLogin(GenericAPIView):
                 redis.redis_db.set(username, jwt_token)
                 # todo all small latter : DONE
                 response = util.smd_response(success=True, message="You are successfully login",
-                                             data={'authorization_key ': jwt_token},
+                                             data={'access': jwt_token},
                                              http_status=status.HTTP_201_CREATED)
-                logger.info('user  successful login.')
+                logger.info('user successful login.')
             else:
                 logger.error('Incorrect credential')
                 response = util.smd_response(message="Incorrect credential",
@@ -305,7 +312,7 @@ class Upload(GenericAPIView):
     """
 
     serializer_class = UploadSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         """
@@ -339,7 +346,7 @@ class ImageUpdate(GenericAPIView):
     """
 
     serializer_class = UploadSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     def put(self, request, image_id):
         """
@@ -358,7 +365,7 @@ class ImageUpdate(GenericAPIView):
 
             if file_serialize.is_valid():
                 file_serialize.save()
-                pdb.set_trace()
+                # pdb.set_trace()
                 response = util.smd_response(success=True, message='You file is successfully update',
                                              data={'image_url': file_serialize.data['image']},
                                              http_status=status.HTTP_200_OK)
