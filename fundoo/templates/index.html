@@ -1,0 +1,16 @@
+
+
+{% load socialaccount %}
+{% providers_media_js %}
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<button> <a href="{% provider_login_url "facebook" method="oauth2" %}">Facebook Oauth2</a> </button>
+<button> <a href="{% provider_login_url "google" method="oauth2" %}">Google Login</a> </button>
+</body>
+</html>

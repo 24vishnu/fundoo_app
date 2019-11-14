@@ -1,0 +1,100 @@
+[
+    {
+      "test_user1": {
+        "username": "admin",
+        "password": "admin"},
+        "test_user2": {
+            "username": "user",
+            "password": "new12345"},
+        "test_user3": {
+            "username": "",
+            "password": ""},
+        "test_user4": {
+            "username": "ad@@@@min",
+            "password": ""}
+    },
+    {
+      "test_user1": {
+        "username": "admin",
+        "email": "vishnu23kumar@gmail.com",
+        "password": "admin"},
+        "test_user2": {
+            "username": "temp_user",
+            "email": "temp_email_gmail.com",
+            "password": "temp_password"},
+        "test_user3": {
+            "username": "",
+            "email": "@",
+            "password": ""},
+        "test_user4": {
+            "username": "new_user",
+            "email": "new_emil@",
+            "password": ""},
+      "test_user5": {
+            "username": "test",
+            "email": "test@gmail.com",
+            "password": "testpassword"}
+    },
+  {
+    "test1": {
+      "password": "admin",
+      "confirm_password": "admin"
+    },
+    "test2": {
+      "password": "",
+      "confirm_password": "admin1"
+    },
+    "test3": {
+      "password": "",
+      "confirm_password": ""
+    },
+    "test4": {
+      "password": "new12345",
+      "confirm_password": ""
+    },
+    "token1":{
+      "token": "3DV8NsSdXKPT4GRwYGMYDN/"
+    },
+    "token2":{
+      "token":"mEAdhNbuzhVruSknMPxCac/"
+    },
+    "token3":{
+      "token": "3gV8NsSdXKPT4GRwYGMYDN/"
+    },
+    "token4":{
+      "token":"mEAdhNb0kzhVruSknMPxCac/"
+    }
+  },
+  {
+      "test1": {
+        "email": "vishnu23kumar@gmail.com"
+      },
+        "test2": {
+          "email": "temp_email_gmail.com"
+        },
+        "test3": {
+          "email": "@"
+        },
+        "test4": {
+            "email": "new_emil@"
+        }
+    },
+  {
+    "test1": {
+      "title": "first note",
+      "content": "note content to share"
+    },
+    "test2": {
+      "title": "",
+      "content": ""
+    },
+    "test3": {
+      "title": "",
+      "content": "note content to share"
+    },
+    "test4": {
+      "title": "Note title",
+      "content": ""
+    }
+  }
+]

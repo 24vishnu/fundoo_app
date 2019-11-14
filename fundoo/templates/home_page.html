@@ -1,0 +1,49 @@
+
+{% load inlinecss %}
+{% inlinecss "css/pagination.css" %}
+{% block content %}
+
+  <div class="infinite-container">
+  <table id="t01" align="center">
+  <tr>
+    <th scope="col">username</th>
+    <th scope="col">email</th>
+    <th scope="col">Is Active</th>
+    <th scope="col">Join date</th>
+    <th scope="col">Last login</th>
+  </tr>
+
+    {% for number in numbers %}
+        <tr>
+                <td><div class="infinite-item">{{ number.username }}</div></td>
+                <td> <div class="infinite-item"> {{ number.email }}</td>
+                 <td><div class="infinite-item">{{ number.is_active }}</div></td>
+                 <td><div class="infinite-item">{{ number.date_joined }}</div></td>
+                 <td><div class="infinite-item">{{ number.last_login }}</div></td>
+        </tr>
+    {% endfor %}
+  </table>
+  {% if numbers.has_next %}
+    <a class="infinite-more-link" href="?page={{ numbers.next_page_number }}">More</a>
+  {% endif %}
+  </div>
+
+
+
+  <div class="loading" style="display: none;">
+    Loading...
+  </div>
+
+  <script>
+    var infinite = new Waypoint.Infinite({
+      element: $('.infinite-container')[0],
+      onBeforePageLoad: function () {
+        $('.loading').show();
+      },
+      onAfterPageLoad: function ($items) {
+        $('.loading').hide();
+      }
+    });
+  </script>
+{% endblock %}
+{% endinlinecss %}

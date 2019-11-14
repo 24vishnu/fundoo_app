@@ -1,0 +1,8 @@
+body{
+    text-align: center;
+    image-resolution: inherit;
+    background-color: #ccccff;
+    background-image: url("1.jpg");
+    background-repeat: repeat-x;
+    color: #fff;
+}

@@ -1,0 +1,52 @@
+
+{% load inlinecss %}
+{% inlinecss "css/pagination.css" %}
+{% block content %}
+
+  <div class="infinite-container">
+  <table id="t01" align="center">
+  <tr>
+    <th scope="col">Id</th>
+    <th scope="col">Title</th>
+    <th scope="col">Content</th>
+    <th scope="col">Reminder</th>
+    <th scope="col">Trashed</th>
+  </tr>
+
+    {% for note in notes %}
+        <tr>
+                <td><div class="infinite-item">{{ note.id }}</div></td>
+                <td> <div class="infinite-item"> {{ note.title }}</td>
+                 <td><div class="infinite-item">{{ note.content }}</div></td>
+                 <td><div class="infinite-item">{{ note.reminder }}</div></td>
+                 <td><div class="infinite-item">{{ note.is_trashed }}</div></td>
+        </tr>
+    {% endfor %}
+  </table>
+  {% if notes.has_next %}
+    <a class="infinite-more-link" href="?page={{ notes.next_page_number }}">Next</a>
+  {% endif %}
+  {% if notes.has_previous %}
+    <a class="infinite-more-link" href="?page={{ notes.previous_page_number }}">Previous</a>
+  {% endif %}
+  </div>
+
+
+
+  <div class="loading" style="display: none;">
+    Loading...
+  </div>
+
+  <script>
+    var infinite = new Waypoint.Infinite({
+      element: $('.infinite-container')[0],
+      onBeforePageLoad: function () {
+        $('.loading').show();
+      },
+      onAfterPageLoad: function ($items) {
+        $('.loading').hide();
+      }
+    });
+  </script>
+{% endblock %}
+{% endinlinecss %}

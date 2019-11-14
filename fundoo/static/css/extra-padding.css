@@ -1,0 +1,20 @@
+body{
+    text-align: center;
+    background-color: blueviolet;
+    background-image: url("../image/1.jpg");
+    background-repeat: repeat-x;
+    color: #fff;
+}
+
+.mail_temp{
+    vertical-align: middle;
+    width: 350px;
+    height: 200px;
+    background-color: blueviolet;
+}
+#center-aline{
+    width: 350px;
+    height: 200px;
+    color: burlywood;
+    background-color: chocolate;
+}
