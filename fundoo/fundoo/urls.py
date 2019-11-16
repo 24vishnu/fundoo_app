@@ -29,13 +29,11 @@ schema_view = get_swagger_view(title='My API')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/user', include('userlogin.urls')),
     path('', include('userlogin.urls')),
-    # path('accounts/', include('allauth.urls')),
     path("sociallogin/", views.social_login, name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-    # path('socialauth/', include('social_django.urls', namespace="social")),
     path("", views.home, name="home"),
+    path("sessionlogin/", views.SessionLogin.as_view(), name='sessionlogin'),
     path('swagger', schema_view),
     path('api/', include('fundoonote.urls')),
 ]

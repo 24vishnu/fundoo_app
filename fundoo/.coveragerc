@@ -1,0 +1,3 @@
+[run]
+omit = venv/*, *migrations/*, fundoonote/__init__(), *wsgi*
+source = .

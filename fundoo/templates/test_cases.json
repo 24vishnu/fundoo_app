@@ -7,8 +7,8 @@
             "username": "user",
             "password": "new12345"},
         "test_user3": {
-            "username": "",
-            "password": ""},
+            "username": "test",
+            "password": "testpassword"},
         "test_user4": {
             "username": "ad@@@@min",
             "password": ""}

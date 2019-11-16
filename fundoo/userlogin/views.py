@@ -24,7 +24,7 @@ from rest_framework.reverse import reverse
 from fundoo.settings import file_handler
 from services import util, redis
 from services.aws import aws_file_upload
-from services.decorators import login_decorator
+from services.decorators import login_decorator, check_login
 from services.event_emitter import ee
 from .models import UserProfile
 from .serializer import (
@@ -50,6 +50,7 @@ logger.addHandler(file_handler)
 # we con use like following config method
 # DEBUG = config('REDIS_PORT', default=8000, cast=int)
 # print(DEBUG)
+
 
 class UserRegistration(GenericAPIView):
     """
@@ -102,7 +103,7 @@ class UserRegistration(GenericAPIView):
 
             # if all user input data is correct then create user profile with given name, email and password and
             # then save in database
-            user = User.objects.create_user(username=username, email=email, password=password, is_active=False)
+            user = User.objects.create_user(username=username, email=email, password=password, is_active=True)
             user.save()
 
             # create jwt token this token is in byte form therefor we decode and convert into string format
@@ -162,13 +163,14 @@ class UserLogin(GenericAPIView):
 
             # authenticate username and password valid or not
             user = authenticate(username=username, password=password)
+            # pdb.set_trace()
             if user is not None:
-                login(request, user)
                 payload = {"username": username, 'password': password}
                 jwt_token = util.token_encode(payload)
-                # print(util.token_encode(payload))
-                # set token in redis cache
+                # # print(util.token_encode(payload))
+                # # set token in redis cache
                 redis.redis_db.set(username, jwt_token)
+
                 # todo all small latter : DONE
                 response = util.smd_response(success=True, message="You are successfully login",
                                              data={'access': jwt_token},
@@ -441,7 +443,8 @@ def social_login(request):
         return util.smd_response(message='something is wrong', http_status=status.HTTP_404_NOT_FOUND)
 
 
-@login_required
+# @login_required
+@check_login
 def home(request):
     """
     :param request: request for share data on social links
@@ -452,3 +455,46 @@ def home(request):
         return render(request, 'home.html', {'link': url})
     except:
         return util.smd_response(message='something is wrong', http_status=status.HTTP_404_NOT_FOUND)
+
+
+class SessionLogin(GenericAPIView):
+    """
+    login method use for login any user,
+    if it is valid user otherwise print error
+    """
+
+    # we need to include serialize class
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        """
+        :param request: username and password for login
+        :return: if username and password is correct then response login success other wise give error
+        """
+        # pdb.set_trace()
+        # Todo create required validation : DONE
+        try:
+            serialized_data = LoginSerializer(data=request.data)
+            if not 'username' in serialized_data.initial_data or not 'password' in serialized_data.initial_data:
+                logger.error('username or password field not present')
+                raise EnvironmentError('username or password field not present')
+            if not serialized_data.is_valid():
+                logger.error('LoginSerializer serialized data not valid')
+                raise ValueError('please enter valid', [k for k in serialized_data.errors.keys()])
+            username = serialized_data.data['username']
+            password = serialized_data.data['password']
+
+            user = authenticate(username=username, password=password)
+            # pdb.set_trace()
+            if user is not None:
+                login(request, user)
+                response = util.smd_response(success=True, message="You are successfully login",
+                                             http_status=status.HTTP_201_CREATED)
+                logger.info('user successful login.')
+            else:
+                logger.error('Incorrect credential')
+                response = util.smd_response(message="Incorrect credential",
+                                             http_status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exception_detail:
+            response = util.smd_response(message=str(exception_detail), http_status=status.HTTP_400_BAD_REQUEST)
+        return response

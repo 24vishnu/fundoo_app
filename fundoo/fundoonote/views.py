@@ -58,6 +58,7 @@ class LabelCreate(GenericAPIView):
         """
         try:
             # todo rename data (new)
+            print(request.user.id)
             serialised_label = LabelSerializer(data=request.data)
             if not 'name' in serialised_label.initial_data:
                 logger.error("'name' field not present in label serializer" + ' for %s', request.user)
@@ -233,6 +234,7 @@ class NoteCreate(GenericAPIView):
         :param request: user request for create fundoo note
         :return: smd response
         """
+        # pdb.set_trace()
         try:
             note_data = NotesSerializer(data=request.data, partial=True)
 
@@ -347,7 +349,7 @@ class NoteModification(GenericAPIView):
 
                 logger.info('insert note data into redis cache' + ' for %s', request.user)
                 redis_db.hmset(str(get_note.values()[0]['user_id']) + 'note',
-                               {get_note.values()[0]['id']: user_redis_note})
+                               {get_note.values()[0]['id']: str(user_redis_note)})
 
                 response = servicesnote.smd_response(success=True, message='following is your note of given note id',
                                                      data=[user_redis_note],
@@ -359,7 +361,7 @@ class NoteModification(GenericAPIView):
                                                      http_status=status.HTTP_200_OK)
         except ValueError as e:
             logger.error('database error' + ' for %s', request.user)
-            response = servicesnote.smd_response(message=str(e), http_status=status.HTTP_400_BAD_REQUEST)
+            response = servicesnote.smd_response(message=str(e), http_status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             logger.error(str(e) + ' for %s', request.user)
             response = servicesnote.smd_response(message=str(e), http_status=status.HTTP_404_NOT_FOUND)
@@ -383,9 +385,7 @@ class NoteModification(GenericAPIView):
                 response = servicesnote.smd_response(message='no content',
                                                      http_status=status.HTTP_204_NO_CONTENT)
                 logger.info('content not present ' + ' for %s', request.user)
-        except ValueError as e:
-            response = servicesnote.smd_response(message=str(e), http_status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
+        except (ValueError, Exception) as e:
             logger.error(str(e) + ' for %s', request.user)
             response = servicesnote.smd_response(message=str(e), http_status=status.HTTP_404_NOT_FOUND)
         return response
@@ -397,6 +397,7 @@ class NoteModification(GenericAPIView):
         :return: will fetch note id from database
         """
         try:
+            # pdb.set_trace()
             instance = FundooNote.objects.get(id=note_id)
             data = request.data
             request_label, request_collaborate = [], []
@@ -411,6 +412,11 @@ class NoteModification(GenericAPIView):
                 data["collaborate"] = [User.objects.get(email=email).id for email in request_collaborate]
             # pdb.set_trace()
             serializer = NotesSerializer(instance, data=data, partial=True)
+
+            if len(serializer.initial_data) == 0:
+                logger.error("field not present" + ' for %s', request.user)
+                raise KeyError('field Already upto date')
+
             if serializer.is_valid():
                 serializer.save()
                 logger.info('Update in database' + ' for %s', request.user)
@@ -543,6 +549,8 @@ class NoteArchive(GenericAPIView):
         :param request: user request for fetching all notes created by requested user
         :return: smd response
         """
+
+        # pdb.set_trace()
         try:
             user_redis_note = note.write_through(request)
             archived_note = [x for x in user_redis_note if (not list(x.values())[0]['is_trashed']
@@ -550,6 +558,7 @@ class NoteArchive(GenericAPIView):
             response = servicesnote.smd_response(success=True, message='following is archived note',
                                                  data=archived_note,
                                                  http_status=status.HTTP_200_OK)
+            logger.info('Archive notes are received' + ' for %s', request.user)
         except (KeyError, ValueError, TypeError)as e:
             logger.error(str(e) + ' for %s', request.user)
             response = servicesnote.smd_response(message=str(e), http_status=status.HTTP_400_BAD_REQUEST)
