@@ -12,9 +12,7 @@ from fundoonote.serializers import NotesSerializer
 #     USER_DETAILS = json.load(f)
 
 header1 = {
-    'HTTP_AUTHORIZATION': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIj'
-                          'oxNTczOTAxNzk4LCJqdGkiOiIxNmZkZjkwM2FjMTg0MjU1OTY1NDRmYjQ0NDEzZmIxYyIsInVzZXJfaWQ'
-                          'iOjEzOH0.rhMa9wxMyBNmHzN7L7HaUMiOiOtRV762HYGwWcBG1Hc'
+    'HTTP_AUTHORIZATION': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNTc0MDcxNjAyLCJqdGkiOiJlZjdlOWZiOTI4OGM0Nzg4YmVmMzQ4MjdjMzJkYjFhZSIsInVzZXJfaWQiOjEzOH0.91Ru2Rg9goSKz1lhS-5m-Aa8gHGUqXq7JjHtQbPI9eA'
 }
 
 
