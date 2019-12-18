@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -45,9 +45,13 @@ INSTALLED_APPS = [
     'django_short_url',
     'mail_templated',
     'django_inlinecss',
+    'colorful',
+
+    'corsheaders',
 
     'userlogin',
     'fundoonote',
+    'django_elasticsearch_dsl'
 ]
 
 MIDDLEWARE = [
@@ -58,6 +62,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'fundoo.urls'
@@ -121,13 +127,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
@@ -158,6 +164,7 @@ AWS_SECRET_ACCESS_KEY = config("AWS_UPLOAD_SECRET_KEY")
 AWS_STORAGE_BUCKET_NAME = config("AWS_UPLOAD_BUCKET")
 AWS_DEFAULT_ACL = None
 AWS_S3_FILE_OVERWRITE = False
+AWS_QUERYSTRING_EXPIRE = (3600*24*6)
 
 
 # urls
@@ -192,8 +199,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(weeks=2),
+    'REFRESH_TOKEN_LIFETIME': timedelta(weeks=2),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
 
@@ -217,3 +224,12 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
+
+CORS_ORIGIN_WHITELIST = (config('FRONT_END_URL'), )
+
+# elasticsearch settings
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'localhost:9200'
+    },
+}

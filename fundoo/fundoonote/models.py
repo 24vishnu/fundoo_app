@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User, AbstractUser
 from django.db import models
+from colorful.fields import RGBColorField
 
 
 class Label(models.Model):
@@ -24,6 +25,7 @@ class FundooNote(models.Model):
     is_pin = models.BooleanField(default=False)
     reminder = models.DateTimeField(blank=True, null=True)
     time_stamp = models.DateTimeField(auto_now_add=True)
+    change_color = RGBColorField(colors=['#FFFFFF'], null=True, blank=True)
 
     def __str__(self):
         return self.title

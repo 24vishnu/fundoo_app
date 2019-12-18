@@ -11,11 +11,13 @@ app_name = 'userlogin'
 urlpatterns = [
     url(r'^signup/$', views.UserRegistration.as_view(), name='sign_up'),
     path('login/', views.UserLogin.as_view(), name='login'),
-    path('user/', views.Profile.as_view(), name="Profile"),
+    path('sessionlogin/', views.SessionLogin.as_view(), name='login'),
+    # path('user/', views.Profile.as_view(), name="Profile"),
     path('upload/', views.Upload.as_view(), name="upload"),
-    path('update/<image_id>', views.ImageUpdate.as_view(), name="update"),
+    path('updatepic/', views.ImageUpdate.as_view(), name="update-pic"),
     path('forgotpassword/', views.ForgotPassword.as_view(), name='forgotpassword'),
-    path('resetpassword/<token>/', views.ResetPassword.as_view(), name='resetpassword'),
-    path('login/activate/<token>/', views.activate, name='activate'),
+    path('resetpassword/<token>', views.ResetPassword.as_view(), name='resetpassword'),
+    path('login/activate/<token>', views.activate, name='activate'),
+    path('profilepic/', views.GetProfilePic.as_view(), name='profilepic'),
     # url('', SCHEMA_VIEW),
 ]
