@@ -1,8 +1,12 @@
+amqp==1.4.9
+anyjson==0.3.3
 atomicwrites==1.3.0
 attrs==19.3.0
 beautifulsoup4==4.8.1
+billiard==3.3.0.23
 boto3==1.10.14
 botocore==1.13.14
+celery==3.1.26.post2
 certifi==2019.9.11
 chardet==3.0.4
 Click==7.0
@@ -13,12 +17,17 @@ coverage==4.5.4
 cssutils==1.0.2
 Django==2.2.7
 django-admin==2.0.0
+django-colorful==1.3
+django-cors-headers==3.2.0
+django-elasticsearch-dsl==7.1.0
+django-elasticsearch-dsl-drf==0.20.3
 django-excel-response2==2.0.8
 django-inlinecss==0.3.0
 django-jquery==3.1.0
 django-mail-templated==2.6.5
 django-models-ext==1.1.9
 django-naomi==0.8
+django-nine==0.2.2
 django-rest-swagger==2.1.2
 django-short-url==1.1.4
 django-six==1.0.4
@@ -28,6 +37,7 @@ djangorestframework==3.10.3
 djangorestframework-simplejwt==4.3.0
 docutils==0.15.2
 elasticsearch==7.0.5
+elasticsearch-dsl==7.1.0
 Flask==1.1.1
 furl==2.1.0
 future==0.18.2
@@ -40,6 +50,7 @@ itsdangerous==1.1.0
 itypes==1.1.0
 Jinja2==2.10.3
 jmespath==0.9.4
+kombu==3.0.37
 locust==0.0
 locustio==0.12.2
 MarkupSafe==1.1.1

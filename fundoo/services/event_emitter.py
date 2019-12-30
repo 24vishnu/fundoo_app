@@ -53,7 +53,7 @@ def temp_mail(subject, email, message_link):
     user = User.objects.filter(email=email)
     if len(user) > 0:
         html_message = render_to_string('mail.html', {'message': message_link, 'user': user[0].username})
-        message = mail.EmailMultiAlternatives(subject, html_message, to=[email])
+        message = mail.EmailMultiAlternatives(subject, html_message, to=email)
         message.attach_alternative(html_message, 'text/html')
         message.send()
     else:
@@ -61,7 +61,27 @@ def temp_mail(subject, email, message_link):
                                      http_status=status.HTTP_400_BAD_REQUEST)
         return response
 
-    # message.attach_file(image_file_name, 'image/png')
-    # plain_message = strip_tags(html_message)
-    # mail.send_mail(subject, plain_message, [], [email], html_message=html_message)
-    # return HttpResponse("Done")
+
+@ee.on('collaborateEvent')
+def collaborate_notification(subject, email, message_link, hostuser):
+    """
+       :param subject: subject of the email message
+       :param email: this is receiver email address (HOST MAIL)
+       :param message_link: message link is a message body in this parameter we
+               add the a link for receiver
+       :return: we return the status what is the status after sending mail (success or failed)
+       """
+    users = User.objects.filter(email__in=[x for x in email])
+
+    if len(users) > 0:
+        for user in users:
+            html_message = render_to_string('collaborate_notification.html', {'message': message_link,
+                                                          'collaborate_user': user.username,
+                                                          'host_user': hostuser})
+            message = mail.EmailMultiAlternatives('Fundoo note share - '+subject, html_message, to=email)
+            message.attach_alternative(html_message, 'text/html')
+            message.send()
+    else:
+        response = util.smd_response(message='some thing is wrong',
+                                     http_status=status.HTTP_400_BAD_REQUEST)
+        return response

@@ -11,7 +11,7 @@ from elasticsearch_dsl import analyzer, tokenizer
 
 html_strip = analyzer(
     'html_strip',
-    tokenizer=tokenizer('trigram', 'nGram', min_gram=3, max_gram=3),
+    tokenizer=tokenizer('trigram', 'nGram', min_gram=3, max_gram=4),
     filter=["lowercase", "stop", "snowball"]
 )
 

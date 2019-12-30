@@ -8,8 +8,7 @@ with open('templates/test_cases.json') as f:
     USER_DETAILS = json.load(f)
 
 header2 = {'Content/Type': 'application/json',
-           'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJwYXNzd29yZCI6'
-                            'InRlc3RwYXNzd29yZCJ9.WQ2hluY8neVN2686SwVWitLuLvIsuocCd8G9_gKIVVo'
+           'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNTc4ODIyODM2LCJqdGkiOiI5Mzc2ZTczZjdhMGI0NDZjYTZkNjg0YTUyYTkxOWY4MSIsInVzZXJfaWQiOjE5fQ.uRRErsPsjTEmu6kIVS9p5QKHLzhVMElsDKg0gJ16A6E'
            }
 
 

@@ -1,0 +1,24 @@
+{% load inlinecss %}
+{% inlinecss "css/collaborateStyle.css" %}
+    <html>
+    <title>
+        collaborate notificaton
+    </title>
+        <body>
+            <center>
+                <div id="center-aline">
+                    <div>
+                        <img src="https://image.winudf.com/v2/image/Y29tLmxpZmVydXNoc3R1ZGlvcy5mdW5kb29faWNvbl8wX2MzZmE5NTRh/icon.png?w=170&fakeurl=1">
+                    </div>
+                    <h1> Hello {{collaborate_user}} </h1>
+                     <p><a href="{{ message }}" > {{ host_user }} </a>  shared a note with you. </p>
+                    <div class="open-link">
+                        <span>
+                            <a href="{{ message }}">Open in fundoo</a>
+                        </span>
+                    </div>
+                </div>
+            </center>
+        </body>
+    </html>
+{% endinlinecss %}

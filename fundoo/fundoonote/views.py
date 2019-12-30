@@ -13,11 +13,16 @@ date : 12/10/2019
 """
 import ast
 import logging
+import pdb
 import pickle
 
 import redis
+from dateutil.parser import parse
+from decouple import config
 from django.contrib.auth.models import User
-from django.http import Http404
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import Http404, HttpResponse
+from django.shortcuts import render
 from django.utils import timezone
 from elasticsearch_dsl import Q
 from rest_framework import status
@@ -27,22 +32,29 @@ from rest_framework.permissions import IsAuthenticated
 
 from fundoo.settings import file_handler, r_db, redis_port
 from services import util as servicesnote, note
+from services.event_emitter import ee
 from services.pagination import PageLimitOffsetPagination
 from .documents import NotesDocument
 from .models import Label, FundooNote
 from .serializers import LabelSerializer, NotesSerializer, NoteShareSerializer, NoteElasticsearchSerializer
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import render
-
-import pdb
 
 redis_db = redis.StrictRedis(host="localhost", db=r_db, port=redis_port)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
 
+# ========================= USE CELERY =====================
+from .tasks import send_mail_task
 
-# todo list and deatils getall and get i
+
+def index(request):
+    # sleepy(10)
+    send_mail_task.delay()
+    return HttpResponse('<h1 style="color:red">Email has been send!!</h1>')
+
+
+# ==========================================================
+
 class LabelList(GenericAPIView):
     serializer_class = LabelSerializer
     permission_classes = (IsAuthenticated,)
@@ -91,7 +103,6 @@ class LabelList(GenericAPIView):
         """
 
         try:
-            # todo rename data (new)
             print(request.user.id)
             serialised_label = LabelSerializer(data=request.data)
             if not 'name' in serialised_label.initial_data:
@@ -217,10 +228,9 @@ class NoteList(GenericAPIView):
         """
 
         try:
-            # pdb.set_trace()
             user_redis_note = note.write_through(request)
             all_notes = [x for x in user_redis_note if (not x['is_trashed']
-                                                            and not x['is_archive'])]
+                                                        and not x['is_archive'])]
 
             response = servicesnote.smd_response(success=True, message='following are your notes',
                                                  data=all_notes,
@@ -241,7 +251,6 @@ class NoteList(GenericAPIView):
         """
         try:
             note_data = NotesSerializer(data=request.data, partial=True)
-
             user = request.user
             global labels, collaborate, label_flag, collaborate_flag
             label_flag, collaborate_flag = False, False
@@ -263,7 +272,7 @@ class NoteList(GenericAPIView):
                     raise ValueError('Label name not found in Label model')
 
             if 'collaborate' in note_data.initial_data:
-                collaborate = note_data.initial_data['Init']
+                collaborate = note_data.initial_data['collaborate']
                 collaborate_flag = True
                 # ==========================================================
                 collaborate_list = User.objects.filter(email__in=[x for x in collaborate])
@@ -277,20 +286,22 @@ class NoteList(GenericAPIView):
                 saved_note_data = note_data.save(user_id=user.id)
                 note_details = FundooNote.objects.filter(id=saved_note_data.id)
                 note_details = note_details.values()[0]
+                # todo if reminder is present then celery reminder task and add this note in queue for send mail
                 if label_flag:
                     note_details['label'] = labels
                 else:
                     note_details['label'] = []
                 if collaborate_flag:
                     note_details['collaborate'] = collaborate
+                    # ---------------------- >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                    if (len(note_details['collaborate']) > 0):
+                        # note_link = request.build_absolute_uri(reverse('fundoonote:note_list'))
+                        note_link = config('FRONT_DASHBOARD')
+                        ee.emit('collaborateEvent', note_details['title'], note_details['collaborate'],
+                                note_link, User.objects.get(id=request.user.id).username)
+                    # ---------------------- >>>>>>>>>>>>>>>>>>>>>>>>>>>>
                 else:
                     note_details['collaborate'] = []
-
-                # try:
-                #     del note_details['time_stamp']
-                #     del note_details['reminder']
-                # except (NameError, KeyError, Exception):
-                #     pass
 
                 redis_db.hmset(str(saved_note_data.user_id) + 'note',
                                {saved_note_data.id: pickle.dumps({k: v for k, v in note_details.items()})})
@@ -331,7 +342,6 @@ class NoteDetails(GenericAPIView):
         :return: smd response
         """
         try:
-            # pdb.set_trace()
             user_redis_note = redis_db.hget(str(request.user.id) + 'note', note_id)
             logger.info("fetch data from redis cache" + ' for %s', request.user)
 
@@ -405,8 +415,13 @@ class NoteDetails(GenericAPIView):
         :param note_id:  note id
         :return: will fetch note id from database
         """
+        # todo if reminder is present then celery reminder task and add this note in queue for send mail
+
         try:
-            # pdb.set_trace()
+            # ==========================
+            user_note = pickle.loads(redis_db.hget(str(request.user.id) + 'note', note_id))
+            # ==========================
+
             instance = self.get_objects(request.user, note_id)
             data = request.data
             request_label, request_collaborate = [], []
@@ -432,23 +447,34 @@ class NoteDetails(GenericAPIView):
                 updated_details = new_details.values()[0]
                 print(image_url.data)
 
-
                 updated_details['image'] = image_url.data[0]['image']
-                # try:
-                #     del updated_details['time_stamp']
-                #     # del updated_details['reminder']
-                # except (NameError, KeyError, Exception):
-                #     pass
                 logger.info('Update in database' + ' for %s', request.user)
                 redis_note = redis_db.hget(str(request.user.id) + 'note', note_id)
 
                 if is_label:
                     updated_details['label'] = request_label
+                else:
+                    updated_details['label'] = user_note['label']
                 if is_collaborate:
                     updated_details['collaborate'] = request_collaborate
+                    # ---------------------- >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                    new_collaborate = [usermail for usermail in  updated_details['collaborate']
+                                       if usermail not in user_note['collaborate']]
+                    if(len(new_collaborate) > 0):
+                        # note_link = request.build_absolute_uri(reverse('fundoonote:note_list'))
+                        note_link = config('FRONT_DASHBOARD')
+                        ee.emit('collaborateEvent', updated_details['title'], new_collaborate,
+                                note_link, User.objects.get(id=request.user.id).username)
+                    # ---------------------- >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                else:
+                    updated_details['collaborate'] = user_note['collaborate']
+
                 redis_note = pickle.loads(redis_note)
                 for key, val in updated_details.items():
-                    redis_note[key] = val
+                    if key == 'reminder' or key == 'time_stamp':
+                        redis_note[key] = str(val)
+                    else:
+                        redis_note[key] = val
                     redis_db.hmset(str(request.user.id) + 'note', {str(note_id): pickle.dumps(redis_note)})
 
                 logger.info('Update in redis cache' + ' for %s', request.user)
@@ -518,26 +544,34 @@ class Reminders(GenericAPIView):
 
         user = request.user
         try:
-
-            note_data = FundooNote.objects.filter(user_id=user.id)
-            reminder_list = note_data.values_list('reminder', flat=True)
+            user_redis_note = note.write_through(request)
+            # note_data = FundooNote.objects.filter(user_id=user.id)
+            reminder_list = [reminder_note for reminder_note in user_redis_note if reminder_note['reminder']]
+            # reminder_list = user_redis_note.values_list('reminder', flat=True)
             expire = []
             pending = []
-            for i in range(len(reminder_list.values())):
-                if reminder_list.values()[i]['reminder'] is None:
-                    continue
-                elif timezone.now() > reminder_list.values()[i]['reminder']:
-                    expire.append(reminder_list.values()[i])
-                else:
-                    pending.append(reminder_list.values()[i])
 
+            for rem_note in reminder_list:
+                if rem_note['reminder'] == 'None' or rem_note['reminder'] is None:
+                    continue
+                elif timezone.now() > parse(rem_note['reminder']):
+                    expire.append(rem_note)
+                else:
+                    pending.append(rem_note)
+
+            # for i in range(len(reminder_list.values())):
+            #     if reminder_list.values()[i]['reminder'] is None:
+            #         continue
+            #     elif timezone.now() > reminder_list.values()[i]['reminder']:
+            #         expire.append(reminder_list.values()[i])
+            #     else:
+            #         pending.append(reminder_list.values()[i])
             reminder = {
                 'fired': expire,
                 'pending': pending
             }
 
             logger.info("Reminders data is loaded")
-            # pdb.set_trace()
             return servicesnote.smd_response(message="Reminder data is:",
                                              data=reminder,
                                              # data={i[0]['id']: i[0]['reminder'] for i in reminder.values()},
@@ -672,11 +706,13 @@ class ElasticSearchAPI(GenericAPIView):
                 """
         try:
             search = NotesDocument.search()
-            search_result = Q('multi_match',query=query_data, fields=['title', 'content'])
+            search_result = Q('multi_match', query=query_data, fields=['title', 'content'])
+            # search_result = Q('match', content=query_data)
             note_data = search.query(search_result)
 
             searched_notes = NotesSerializer(note_data.to_queryset(), many=True)
-            # print(searched_notes.data)
+            print(note_data)
+            print(len(searched_notes.data))
             response = servicesnote.smd_response(success=True, message='following your searched result',
                                                  data=searched_notes.data,
                                                  http_status=status.HTTP_200_OK)

@@ -1,6 +1,6 @@
 body{
     text-align: center;
-    background-color: blueviolet;
+    background-color: #cbd7e2;
     background-image: url("../image/1.jpg");
     background-repeat: repeat-x;
     color: #fff;
@@ -10,11 +10,11 @@ body{
     vertical-align: middle;
     width: 350px;
     height: 200px;
-    background-color: blueviolet;
+    background-color: #9ce2dc;
 }
 #center-aline{
     width: 350px;
     height: 200px;
-    color: burlywood;
-    background-color: chocolate;
+    color: #5450de;
+    background-color: #86d256;
 }

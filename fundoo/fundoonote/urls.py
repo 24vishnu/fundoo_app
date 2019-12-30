@@ -16,7 +16,8 @@ from .views import (
     PaginationApiView,
     PaginationAPI,
     LabelNotesDetails,
-    ElasticSearchAPI
+    ElasticSearchAPI,
+    index
 )
 
 SCHEMA_VIEW = get_swagger_view(title='Fundoo API')
@@ -36,6 +37,7 @@ urlpatterns = [
     path('paginationrest/', PaginationAPI.as_view(), name='rest_pagination'),
     path('labelnote/<label_id>', LabelNotesDetails.as_view(), name='notes_of_label'),
     path('elasticsearch/<query_data>', ElasticSearchAPI.as_view(), name='search_engine'),
+    path('', index, name='celery'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

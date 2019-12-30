@@ -42,7 +42,7 @@ def write_through(request):
         for data in note_data.data:
             data['id'] = get_note.values()[i]['id']
             redis_db.hmset(str(request.user.id) + 'note',
-                           {str(get_note.values()[i]['id']): pickle.dumps({k: v for k, v in data.items()})})
+                           {str(get_note.values()[i]['id']): pickle.dumps(data)})
             i += 1
 
     user_redis_note = redis_db.hgetall(str(request.user.id) + 'note')

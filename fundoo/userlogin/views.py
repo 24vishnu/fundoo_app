@@ -4,33 +4,28 @@ views.py: In views.py file we implement the all required view api,s
 author : vishnu kumar
 date : 28/09/2019
 """
-import json
 import logging
-import pdb
+
 # decouple package work on .env, .ini
 # from decouple import config
+import pdb
+
 from decouple import config
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-import requests
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
 from django_short_url.models import ShortURL
 from django_short_url.views import get_surl
 # from fundoo.settings import file_handler
 from rest_framework import status
-from rest_framework.decorators import api_view
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.reverse import reverse
 
 from fundoo.settings import file_handler
 from services import util, redis
-from services.aws import aws_file_upload
-from services.decorators import login_decorator, check_login
+from services.decorators import check_login
 from services.event_emitter import ee
 from .models import UserProfile
 from .serializer import (
@@ -41,21 +36,10 @@ from .serializer import (
     UploadSerializer,
 )
 
-# from services import (
-#     redis,
-#     util,
-# )
-# from services.decorators import login_decorator
-# from services.event_emitter import ee
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(file_handler)
-
-
-# we con use like following config method
-# DEBUG = config('REDIS_PORT', default=8000, cast=int)
-# print(DEBUG)
 
 
 class UserRegistration(GenericAPIView):
@@ -101,7 +85,7 @@ class UserRegistration(GenericAPIView):
             # Todo request schema for reverse url : DONE
             # print(request.build_absolute_uri(reverse('userlogin:activate', kwargs={'token': short_token[2]})))
             mail_url = request.build_absolute_uri(reverse('userlogin:activate', kwargs={'token': short_token[2]}))
-            ee.emit('messageEvent', mail_subject, user.email, mail_url)
+            ee.emit('messageEvent', mail_subject, [user.email], mail_url)
             response = util.smd_response(success=True, message='You are successfully registered',
                                          http_status=status.HTTP_201_CREATED)
             logger.info('User successfully registered')
@@ -215,7 +199,7 @@ class ForgotPassword(GenericAPIView):
 
                 mail_url = config('FRONT_END_RESET_PASSWORD') + short_token[2]
                 # ee.emit('emptEvent', mail_subject, email, mail_url)
-                ee.emit('messageEvent', mail_subject, email, mail_url)
+                ee.emit('messageEvent', mail_subject, [email], mail_url)
                 response = util.smd_response(success=True, message='Check your mail and reset your password',
                                              http_status=status.HTTP_200_OK)
                 logger.info('password link send on email')
@@ -291,7 +275,6 @@ class Upload(GenericAPIView):
         :param request: request file details which user need to post
         :return: response in smd format
         """
-        
         # todo use key for user : DONE (key is user_id)
         try:
             # file_serialize = UploadSerializer(data=request.data)
@@ -327,7 +310,12 @@ class ImageUpdate(GenericAPIView):
         :return: response in smd format
         """
         try:
-            instance = UserProfile.objects.get(user_id=request.user.id)
+            pdb.set_trace()
+            try:
+                instance = UserProfile.objects.get(user_id=request.user.id)
+            except:
+                Upload.post(self, request)
+                instance = UserProfile.objects.get(user_id=request.user.id)
 
             file_serialize = UploadSerializer(instance, data=request.FILES, partial=True)
             if not 'image' in file_serialize.initial_data:
@@ -475,7 +463,10 @@ class GetProfilePic(GenericAPIView):
         try:
             user = User.objects.get(id=request.user.id)
             user_detail = UserProfile.objects.filter(user_id=user.id)
-            image = UploadSerializer(user_detail, many=True)
+            try:
+                image = UploadSerializer(user_detail, many=True)
+            except:
+                pass
             
             user_info = {
                 'username': user.username,

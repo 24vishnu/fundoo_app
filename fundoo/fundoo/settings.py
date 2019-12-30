@@ -98,6 +98,7 @@ DATABASES = {
         'PASSWORD': config("DB_PASSWORD"),
         'HOST': 'localhost',
         'PORT': '3306',
+        'TIME_ZONE': 'Asia/Kolkata',
         'TEST': {
             'NAME': 'test_myproject',
         }
@@ -129,11 +130,7 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Asia/Kolkata'
 
-USE_I18N = True
-
-USE_L10N = True
-
-USE_TZ = False
+USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
@@ -233,3 +230,13 @@ ELASTICSEARCH_DSL = {
         'hosts': 'localhost:9200'
     },
 }
+
+
+# CELERY STUFF
+# CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_BROKER_URL = 'amqp://myuser:mypassword@localhost:5672/myvhost'
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
