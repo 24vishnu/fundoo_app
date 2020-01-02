@@ -19,5 +19,6 @@ urlpatterns = [
     path('resetpassword/<token>', views.ResetPassword.as_view(), name='resetpassword'),
     path('login/activate/<token>', views.activate, name='activate'),
     path('profilepic/', views.GetProfilePic.as_view(), name='profilepic'),
+    path('users/', views.AllUsers.as_view(), name='users'),
     # url('', SCHEMA_VIEW),
 ]

@@ -49,8 +49,8 @@ def temp_mail(subject, email, message_link):
                add the a link for receiver
        :return: we return the status what is the status after sending mail (success or failed)
        """
-    # pdb.set_trace()
-    user = User.objects.filter(email=email)
+    
+    user = User.objects.filter(email=email[0])
     if len(user) > 0:
         html_message = render_to_string('mail.html', {'message': message_link, 'user': user[0].username})
         message = mail.EmailMultiAlternatives(subject, html_message, to=email)

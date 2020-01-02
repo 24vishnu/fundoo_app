@@ -22,6 +22,7 @@ from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.reverse import reverse
+from rest_framework.views import APIView
 
 from fundoo.settings import file_handler
 from services import util, redis
@@ -171,7 +172,7 @@ class ForgotPassword(GenericAPIView):
         # todo use body in place of request.data : DONE (but now i am using serializer)
         
         try:
-
+            # pdb.set_trace()
             serialized_data = ForgotPasswordSerializer(data=request.data)
             if not 'email' in serialized_data.initial_data:
                 logger.error('email field not present')
@@ -310,7 +311,6 @@ class ImageUpdate(GenericAPIView):
         :return: response in smd format
         """
         try:
-            pdb.set_trace()
             try:
                 instance = UserProfile.objects.get(user_id=request.user.id)
             except:
@@ -481,6 +481,27 @@ class GetProfilePic(GenericAPIView):
             else:
                 logger.error('Image not found')
                 response = util.smd_response(message='image not found', data=user_info, http_status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(e)
+            response = util.smd_response(message=str(e), http_status=status.HTTP_400_BAD_REQUEST)
+        return response
+
+class AllUsers(GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+    def get(self, request):
+        """
+        :param request: request file details which user need to get
+        :return: response in smd format
+        """
+        try:
+            # pdb.set_trace()
+            all_user = User.objects.all()
+            all_emails = [{'username':user.username, 'email':user.email} for user in all_user if user.id != request.user.id]
+
+            response = util.smd_response(success=True, message='Following are the fundoo users',
+                                         data=all_emails,
+                                         http_status=status.HTTP_200_OK)
 
         except Exception as e:
             logger.error(e)
